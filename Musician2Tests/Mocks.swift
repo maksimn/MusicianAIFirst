@@ -69,3 +69,8 @@ final class TimerAPIMock: TimerAPI {
         block?()
     }
 }
+
+final class LoggerMock: Logger {
+    func log(_ message: String, level: LogLevel) {
+    }
+}

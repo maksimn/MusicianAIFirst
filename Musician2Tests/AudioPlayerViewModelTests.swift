@@ -35,7 +35,8 @@ struct AudioPlayerViewModelTests {
             track: track,
             dataLoader: dataLoader,
             audioPlayerAPI: audioPlayerAPI,
-            timerAPI: timerAPI
+            timerAPI: timerAPI,
+            logger: LoggerMock()
         )
 
         return (viewModel, audioPlayerAPI, timerAPI, dataLoader)
@@ -174,7 +175,8 @@ struct AudioPlayerViewModelTests {
             track: track,
             dataLoader: dataLoader,
             audioPlayerAPI: AudioPlayerAPIMock(),
-            timerAPI: TimerAPIMock()
+            timerAPI: TimerAPIMock(),
+            logger: LoggerMock()
         )
         loadingViewModel = viewModel
 
@@ -431,7 +433,8 @@ struct AudioPlayerViewModelTests {
             track: track,
             dataLoader: dataLoader,
             audioPlayerAPI: audioMock,
-            timerAPI: TimerAPIMock()
+            timerAPI: TimerAPIMock(),
+            logger: LoggerMock()
         )
         loadingViewModel = viewModel
 

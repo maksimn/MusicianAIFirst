@@ -19,7 +19,6 @@ final class TimerAPIImpl: TimerAPI {
     private var timer: Timer?
 
     func start(block: @escaping @MainActor () -> Void) {
-        stop()
         timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { _ in
             Task { @MainActor in
                 block()
