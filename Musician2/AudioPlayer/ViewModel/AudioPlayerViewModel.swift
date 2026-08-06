@@ -53,16 +53,20 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 
     private let timerAPI: TimerAPI
 
+    private let logger: Logger
+
     init(
         track: Track,
         dataLoader: NetworkDataLoader,
         audioPlayerAPI: AudioPlayerAPI,
-        timerAPI: TimerAPI
+        timerAPI: TimerAPI,
+        logger: Logger
     ) {
         self.track = track
         self.dataLoader = dataLoader
         self.audioPlayerAPI = audioPlayerAPI
         self.timerAPI = timerAPI
+        self.logger = logger
         self.audioPlayerAPI.delegate = self
     }
 
@@ -70,26 +74,41 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 
     @MainActor
     func loadTrack() async {
+        logger.log("The user has opened the player for the '\(track.name)' track.", level: .info)
+
         guard let url = URL(string: track.url) else {
+            logger.log("The track url = '\(track.url)' is invalid.", level: .error)
             state = .error
             return
         }
 
         state = .loading
+        logger.log("Downloading the track from \(url) ...", level: .info)
 
         do {
-            data = try await dataLoader.download(url)
+            let data = try await dataLoader.download(url)
+
+            self.data = data
             state = .loaded
+            logger.log("The track has been downloaded, \(data.count) bytes.", level: .info)
         } catch {
+            logger.log("\(error)", level: .error)
             state = .error
         }
+
+        logger.logState(actionName: "loadTrack()", state)
     }
 
     // MARK: - Playback control
 
     @MainActor
     func play() {
-        guard let data else { return }
+        logger.log("The user has tapped the play / pause button, current state = \(state).", level: .info)
+
+        guard let data else {
+            logger.log("The track has not been loaded yet, the tap is ignored.", level: .warn)
+            return
+        }
 
         do {
             switch state {
@@ -103,8 +122,11 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
                 break
             }
         } catch {
+            logger.log("\(error)", level: .error)
             state = .error
         }
+
+        logger.logState(actionName: "play()", state)
     }
 
     @MainActor
@@ -161,6 +183,8 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 extension AudioPlayerViewModelImpl: AudioPlayerDelegate {
 
     func didFinishPlaying() {
+        logger.log("The track \(track) has finished playing.", level: .info)
+
         state = .initial
         timerAPI.stop()
         currentTime = 0

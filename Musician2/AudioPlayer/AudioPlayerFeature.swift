@@ -7,7 +7,11 @@
 
 import SwiftUI
 
+// AIF: Logging for the AudioPlayer feature.
+
 struct AudioPlayerFeature: View {
+
+    private let logger: Logger = LoggerImpl(category: "AudioPlayer")
 
     var body: some View {
         AudioPlayerView(
@@ -15,8 +19,9 @@ struct AudioPlayerFeature: View {
                 track: Track(trackId: 1, name: "Анна", url: "http://maksimn.github.io/elizarov/notebook/anna.mp3",
                              duration: "1:08"),
                 dataLoader: URLSessionNetworkDataLoader(),
-                audioPlayerAPI: AVAudioPlayerAPI(),
-                timerAPI: TimerAPIImpl()
+                audioPlayerAPI: LoggingAudioPlayerAPI(decorated: AVAudioPlayerAPI(), logger: logger),
+                timerAPI: LoggingTimerAPI(decorated: TimerAPIImpl(), logger: logger),
+                logger: logger
             )
         )
     }
