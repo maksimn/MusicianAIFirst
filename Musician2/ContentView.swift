@@ -9,8 +9,22 @@ import SwiftUI
 
 struct ContentView: View {
 
+    @State private var trackSelector: TrackSelector
+
+    init(trackSelector: TrackSelector = TrackSelectorImpl(
+        albumListLoadedListener: AlbumListLoadedStream.shared,
+        findNextTrackListener: FindNextTrackStream.shared,
+        nextTrackSender: NextTrackStream.shared,
+        logger: LoggerImpl(category: "TrackSelector")
+    )) {
+        _trackSelector = State(wrappedValue: trackSelector)
+    }
+
     var body: some View {
         AlbumListFeature()
+            .task {
+                trackSelector.start()
+            }
         AudioPlayerFeature()
     }
 }

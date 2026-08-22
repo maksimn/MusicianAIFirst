@@ -11,14 +11,17 @@ import Observation
 @MainActor
 protocol AudioPlayerViewModel {
 
-    var track: Track { get }
+    var track: Track? { get }
     var state: AudioPlayerState { get }
     var progress: Double { get }
     var currentTime: TimeInterval { get }
     var timeDisplay: String { get }
     var progressValue: Double { get }
 
-    func loadTrack() async
+    /// Starts listening to the NextTrack action, loads the received tracks
+    /// and plays them automatically when the action asks for it.
+    func start() async
+
     func play()
 }
 
@@ -33,7 +36,7 @@ enum AudioPlayerError: Error {
 @Observable
 final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 
-    let track: Track
+    private(set) var track: Track?
 
     private(set) var state: AudioPlayerState = .initial
 
@@ -42,7 +45,7 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
     private(set) var currentTime: TimeInterval = 0.0
 
     var timeDisplay: String {
-        isActive ? formattedTime(currentTime) : track.duration
+        isActive ? formattedTime(currentTime) : (track?.duration ?? "")
     }
 
     var progressValue: Double {
@@ -57,19 +60,25 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 
     private let timerAPI: TimerAPI
 
+    private let nextTrackListener: NextTrackListener
+
+    private let findNextTrackSender: FindNextTrackSender
+
     private let logger: Logger
 
     init(
-        track: Track,
         dataLoader: NetworkDataLoader,
         audioPlayerAPI: AudioPlayerAPI,
         timerAPI: TimerAPI,
+        nextTrackListener: NextTrackListener,
+        findNextTrackSender: FindNextTrackSender,
         logger: Logger
     ) {
-        self.track = track
         self.dataLoader = dataLoader
         self.audioPlayerAPI = audioPlayerAPI
         self.timerAPI = timerAPI
+        self.nextTrackListener = nextTrackListener
+        self.findNextTrackSender = findNextTrackSender
         self.logger = logger
         self.audioPlayerAPI.delegate = self
     }
@@ -77,8 +86,24 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
     // MARK: - Track loading
 
     @MainActor
-    func loadTrack() async {
-        logger.log("The user has opened the player for the '\(track.name)' track.", level: .info)
+    func start() async {
+        logger.log("The player has started listening to the NextTrack stream.", level: .info)
+
+        for await trackData in nextTrackListener.trackData {
+            await loadTrack(trackData.track)
+
+            if trackData.autoPlay {
+                autoPlay()
+            }
+        }
+    }
+
+    @MainActor
+    func loadTrack(_ track: Track) async {
+        logger.log("The '\(track.name)' track has been received by the player.", level: .info)
+
+        self.track = track
+        resetPlayback()
 
         guard let url = URL(string: track.url) else {
             logger.log("The track url = '\(track.url)' is invalid.", level: .error)
@@ -109,8 +134,26 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
     func play() {
         logger.log("The user has tapped the play / pause button, current state = \(state).", level: .info)
 
+        togglePlayback()
+    }
+
+    /// Starts the playback of the just loaded track without any user interaction.
+    @MainActor
+    private func autoPlay() {
+        guard state == .loaded else {
+            logger.log("The track is not loaded, state = \(state), there is nothing to play automatically.", level: .warn)
+            return
+        }
+
+        logger.log("Playing the received track automatically.", level: .info)
+
+        togglePlayback()
+    }
+
+    @MainActor
+    private func togglePlayback() {
         guard let data else {
-            logger.log("The track has not been loaded yet, the tap is ignored.", level: .warn)
+            logger.log("The track has not been loaded yet, the request is ignored.", level: .warn)
             return
         }
 
@@ -130,7 +173,7 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
             state = .error(WithError(error))
         }
 
-        logger.logState(actionName: "play()", state)
+        logger.logState(actionName: "togglePlayback()", state)
     }
 
     @MainActor
@@ -150,6 +193,15 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
         audioPlayerAPI.pause()
         state = .paused
         timerAPI.stop()
+    }
+
+    @MainActor
+    private func resetPlayback() {
+        timerAPI.stop()
+        data = nil
+        currentTime = 0
+        progress = 0
+        state = .initial
     }
 
     // MARK: - Progress tracking
@@ -187,11 +239,12 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 extension AudioPlayerViewModelImpl: AudioPlayerDelegate {
 
     func didFinishPlaying() {
-        logger.log("The track \(track) has finished playing.", level: .info)
+        if let track {
+            logger.log("The track \(String(describing: track)) has finished playing.", level: .info)
+        }
 
-        state = .initial
-        timerAPI.stop()
-        currentTime = 0
-        progress = 0
+        resetPlayback()
+        logger.log("Asking the track selector for the next track.", level: .info)
+        findNextTrackSender.send()
     }
 }

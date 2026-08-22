@@ -16,8 +16,11 @@ final class AlbumListViewModel {
 
     private let repository: AlbumRepository
 
-    init(repository: AlbumRepository) {
+    private let albumListLoadedSender: AlbumListLoadedSender
+
+    init(repository: AlbumRepository, albumListLoadedSender: AlbumListLoadedSender) {
         self.repository = repository
+        self.albumListLoadedSender = albumListLoadedSender
         self.albums = repository.loadCachedAlbums()
     }
 
@@ -38,5 +41,9 @@ final class AlbumListViewModel {
         }
 
         isLoading = false
+
+        if !albums.isEmpty {
+            albumListLoadedSender.send(albums)
+        }
     }
 }

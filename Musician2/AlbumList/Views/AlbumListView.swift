@@ -143,8 +143,14 @@ private struct AlbumDetailView: View {
 }
 
 #Preview {
-    let repository = AlbumRepository(dataLoader: URLSessionNetworkDataLoader(), cacheService: FileCacheService())
-    let viewModel = AlbumListViewModel(repository: repository)
+    let repository = AlbumRepository(
+        dataLoader: URLSessionNetworkDataLoader(),
+        cacheService: FileCacheService()
+    )
+    let viewModel = AlbumListViewModel(
+        repository: repository,
+        albumListLoadedSender: AlbumListLoadedStream.shared
+    )
 
     return AlbumListView(viewModel: viewModel)
 }

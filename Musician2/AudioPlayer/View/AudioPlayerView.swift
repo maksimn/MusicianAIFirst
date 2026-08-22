@@ -38,7 +38,7 @@ struct AudioPlayerView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 0) {
-                    Text(viewModel.track.name)
+                    Text(viewModel.track?.name ?? "")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
                         .lineLimit(1)
@@ -75,7 +75,7 @@ struct AudioPlayerView: View {
         .frame(height: 76)
         .background(Color(red: 0.15, green: 0.15, blue: 0.15))
         .task {
-            await viewModel.loadTrack()
+            await viewModel.start()
         }
     }
 }
