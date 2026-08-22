@@ -7,11 +7,11 @@
 
 import Foundation
 
-public final class LoggerImpl: Logger {
+public nonisolated final class LoggerImpl: Logger {
 
     private let category: String
 
-    private lazy var dateformat = {
+    private let dateformat: DateFormatter = {
         let dateformat = DateFormatter()
 
         dateformat.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Track: Decodable, Identifiable {
+struct Track: Equatable, Decodable, Identifiable {
 
     let trackId: Int
     let name: String
@@ -19,4 +19,9 @@ struct Track: Decodable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case trackId, name, url, duration
     }
+}
+
+struct TrackData: Equatable {
+    let track: Track
+    let autoPlay: Bool
 }

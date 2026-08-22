@@ -15,7 +15,8 @@ struct AlbumListFeature: View {
                 repository: AlbumRepository(
                     dataLoader: URLSessionNetworkDataLoader(),
                     cacheService: FileCacheService()
-                )
+                ),
+                albumListLoadedSender: AlbumListLoadedStream.shared
             )
         )
     }

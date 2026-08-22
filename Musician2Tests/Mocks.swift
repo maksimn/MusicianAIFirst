@@ -74,3 +74,35 @@ final class LoggerMock: Logger {
     func log(_ message: String, level: LogLevel) {
     }
 }
+
+final class NextTrackListenerMock: NextTrackListener {
+
+    private let trackDataList: [TrackData]
+
+    init(_ trackDataList: [TrackData]) {
+        self.trackDataList = trackDataList
+    }
+
+    init(_ tracks: [Track], autoPlay: Bool = false) {
+        self.trackDataList = tracks.map { TrackData(track: $0, autoPlay: autoPlay) }
+    }
+
+    /// The stream finishes right after the tracks are yielded, so listening to it completes deterministically.
+    var trackData: AsyncStream<TrackData> {
+        AsyncStream { continuation in
+            for trackData in trackDataList {
+                continuation.yield(trackData)
+            }
+            continuation.finish()
+        }
+    }
+}
+
+final class FindNextTrackSenderMock: FindNextTrackSender {
+
+    private(set) var sendCallCount = 0
+
+    func send() {
+        sendCallCount += 1
+    }
+}

@@ -14,11 +14,11 @@ struct AudioPlayerFeature: View {
     var body: some View {
         AudioPlayerView(
             viewModel: AudioPlayerViewModelImpl(
-                track: Track(trackId: 1, name: "Анна", url: "http://maksimn.github.io/elizarov/notebook/anna.mp3",
-                             duration: "1:08"),
                 dataLoader: URLSessionNetworkDataLoader(),
                 audioPlayerAPI: LoggingAudioPlayerAPI(decorated: AVAudioPlayerAPI(), logger: logger),
                 timerAPI: LoggingTimerAPI(decorated: TimerAPIImpl(), logger: logger),
+                nextTrackListener: NextTrackStream.shared,
+                findNextTrackSender: FindNextTrackStream.shared,
                 logger: logger
             )
         )

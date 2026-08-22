@@ -18,19 +18,24 @@ struct AudioPlayerViewModelTests {
 
     let testDuration = "1:01"
 
+    private func makeTrack(url: String = "https://example.com/track.mp3") -> Track {
+        Track(trackId: 1, name: "Test Track", url: url, duration: testDuration)
+    }
+
     private func makeSUT(
         url: String = "https://example.com/track.mp3",
         downloadData: Data = Data([1, 2, 3]),
         downloadError: Error? = nil,
+        autoPlay: Bool = false,
         audioPlayerAPI: AudioPlayerAPIMock = AudioPlayerAPIMock(),
-        timerAPI: TimerAPIMock = TimerAPIMock()
+        timerAPI: TimerAPIMock = TimerAPIMock(),
+        findNextTrackSender: FindNextTrackSenderMock = FindNextTrackSenderMock()
     ) -> (
         AudioPlayerViewModelImpl,
         AudioPlayerAPIMock,
         TimerAPIMock,
         NetworkDataLoaderMock
     ) {
-        let track = Track(trackId: 1, name: "Test Track", url: url, duration: testDuration)
         let dataLoader = NetworkDataLoaderMock { _ in
             if let downloadError {
                 throw downloadError
@@ -39,10 +44,11 @@ struct AudioPlayerViewModelTests {
         }
 
         let viewModel = AudioPlayerViewModelImpl(
-            track: track,
             dataLoader: dataLoader,
             audioPlayerAPI: audioPlayerAPI,
             timerAPI: timerAPI,
+            nextTrackListener: NextTrackListenerMock([makeTrack(url: url)], autoPlay: autoPlay),
+            findNextTrackSender: findNextTrackSender,
             logger: LoggerMock()
         )
 
@@ -63,7 +69,7 @@ struct AudioPlayerViewModelTests {
             audioPlayerAPI: audioPlayerAPI,
             timerAPI: timerAPI
         )
-        await viewModel.loadTrack()
+        await viewModel.start()
         return (viewModel, audioMock, timerMock)
     }
 
@@ -108,10 +114,16 @@ struct AudioPlayerViewModelTests {
         #expect(viewModel.state == .initial)
     }
 
-    @Test func initialTimeDisplayShowsTrackDuration() {
+    @Test func initialTrackIsNil() {
         let (viewModel, _, _, _) = makeSUT()
 
-        #expect(viewModel.timeDisplay == testDuration)
+        #expect(viewModel.track == nil)
+    }
+
+    @Test func initialTimeDisplayIsEmptyString() {
+        let (viewModel, _, _, _) = makeSUT()
+
+        #expect(viewModel.timeDisplay == "")
     }
 
     @Test func initialProgressValueIsOne() {
@@ -132,10 +144,12 @@ struct AudioPlayerViewModelTests {
         #expect(viewModel.currentTime == 0)
     }
 
-    @Test func initExposesInjectedTrack() {
+    @Test func startExposesTrackReceivedFromNextTrackAction() async {
         let (viewModel, _, _, _) = makeSUT(url: "https://example.com/other.mp3")
 
-        #expect(viewModel.track.url == "https://example.com/other.mp3")
+        await viewModel.start()
+
+        #expect(viewModel.track?.url == "https://example.com/other.mp3")
     }
 
     @Test func initSetsItselfAsAudioPlayerDelegate() {
@@ -149,7 +163,7 @@ struct AudioPlayerViewModelTests {
     @Test func loadTrackWithInvalidURLSetsErrorState() async {
         let (viewModel, _, _, _) = makeSUT(url: "")
 
-        await viewModel.loadTrack()
+        await viewModel.start()
 
         #expect(isError(viewModel.state))
     }
@@ -157,7 +171,7 @@ struct AudioPlayerViewModelTests {
     @Test func loadTrackSuccessSetsLoadedState() async {
         let (viewModel, _, _, _) = makeSUT()
 
-        await viewModel.loadTrack()
+        await viewModel.start()
 
         #expect(viewModel.state == .loaded)
     }
@@ -165,7 +179,7 @@ struct AudioPlayerViewModelTests {
     @Test func loadTrackFailureSetsErrorState() async {
         let (viewModel, _, _, _) = makeSUT(downloadError: TestError.failed)
 
-        await viewModel.loadTrack()
+        await viewModel.start()
 
         #expect(isError(viewModel.state))
     }
@@ -177,17 +191,17 @@ struct AudioPlayerViewModelTests {
             stateDuringDownload = loadingViewModel?.state
             return Data([1, 2, 3])
         }
-        let track = Track(trackId: 1, name: "Test Track", url: "https://example.com/track.mp3", duration: testDuration)
         let viewModel = AudioPlayerViewModelImpl(
-            track: track,
             dataLoader: dataLoader,
             audioPlayerAPI: AudioPlayerAPIMock(),
             timerAPI: TimerAPIMock(),
+            nextTrackListener: NextTrackListenerMock([makeTrack()]),
+            findNextTrackSender: FindNextTrackSenderMock(),
             logger: LoggerMock()
         )
         loadingViewModel = viewModel
 
-        await viewModel.loadTrack()
+        await viewModel.start()
 
         #expect(stateDuringDownload == .loading)
     }
@@ -195,8 +209,8 @@ struct AudioPlayerViewModelTests {
     @Test func loadTrackTwiceSucceedsAndKeepsLoadedState() async {
         let (viewModel, _, _, _) = makeSUT()
 
-        await viewModel.loadTrack()
-        await viewModel.loadTrack()
+        await viewModel.start()
+        await viewModel.start()
 
         #expect(viewModel.state == .loaded)
     }
@@ -216,7 +230,7 @@ struct AudioPlayerViewModelTests {
     @Test func errorStateTimeDisplayShowsTrackDuration() async {
         let (viewModel, _, _, _) = makeSUT(downloadError: TestError.failed)
 
-        await viewModel.loadTrack()
+        await viewModel.start()
 
         #expect(viewModel.timeDisplay == testDuration)
     }
@@ -411,7 +425,7 @@ struct AudioPlayerViewModelTests {
     @Test func playAfterLoadFailureDoesNotCallPlay() async {
         let (viewModel, audioMock, _, _) = makeSUT(downloadError: TestError.failed)
 
-        await viewModel.loadTrack()
+        await viewModel.start()
         viewModel.play()
 
         #expect(audioMock.playCallCount == 0)
@@ -420,7 +434,7 @@ struct AudioPlayerViewModelTests {
     @Test func playAfterLoadFailureKeepsErrorState() async {
         let (viewModel, _, _, _) = makeSUT(downloadError: TestError.failed)
 
-        await viewModel.loadTrack()
+        await viewModel.start()
         viewModel.play()
 
         #expect(isError(viewModel.state))
@@ -435,17 +449,17 @@ struct AudioPlayerViewModelTests {
             playCountDuringLoad = audioMock.playCallCount
             return Data([1, 2, 3])
         }
-        let track = Track(trackId: 1, name: "Test Track", url: "https://example.com/track.mp3", duration: testDuration)
         let viewModel = AudioPlayerViewModelImpl(
-            track: track,
             dataLoader: dataLoader,
             audioPlayerAPI: audioMock,
             timerAPI: TimerAPIMock(),
+            nextTrackListener: NextTrackListenerMock([makeTrack()]),
+            findNextTrackSender: FindNextTrackSenderMock(),
             logger: LoggerMock()
         )
         loadingViewModel = viewModel
 
-        await viewModel.loadTrack()
+        await viewModel.start()
 
         #expect(playCountDuringLoad == 0)
     }
@@ -513,5 +527,210 @@ struct AudioPlayerViewModelTests {
         audioMock.simulateFinishPlaying()
 
         #expect(timerMock.stopCallCount >= 1)
+    }
+
+    @Test func didFinishPlayingSendsFindNextTrackRequest() async {
+        let audioMock = AudioPlayerAPIMock()
+        let findNextTrackSender = FindNextTrackSenderMock()
+        let (viewModel, _, _, _) = makeSUT(
+            audioPlayerAPI: audioMock,
+            findNextTrackSender: findNextTrackSender
+        )
+        await viewModel.start()
+        viewModel.play()
+
+        audioMock.simulateFinishPlaying()
+
+        #expect(findNextTrackSender.sendCallCount == 1)
+    }
+
+    @Test func didNotFinishPlayingDoesNotSendFindNextTrackRequest() async {
+        let findNextTrackSender = FindNextTrackSenderMock()
+        let (viewModel, _, _, _) = makeSUT(findNextTrackSender: findNextTrackSender)
+
+        await viewModel.start()
+        viewModel.play()
+
+        #expect(findNextTrackSender.sendCallCount == 0)
+    }
+
+    // MARK: - Next track action
+
+    @Test func nextTrackReplacesThePreviousOne() async {
+        let viewModel = AudioPlayerViewModelImpl(
+            dataLoader: NetworkDataLoaderMock { _ in Data([1, 2, 3]) },
+            audioPlayerAPI: AudioPlayerAPIMock(),
+            timerAPI: TimerAPIMock(),
+            nextTrackListener: NextTrackListenerMock([
+                Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01"),
+                Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02")
+            ]),
+            findNextTrackSender: FindNextTrackSenderMock(),
+            logger: LoggerMock()
+        )
+
+        await viewModel.start()
+
+        #expect(viewModel.track?.trackId == 2)
+    }
+
+    @Test func nextTrackIsLoaded() async {
+        let viewModel = AudioPlayerViewModelImpl(
+            dataLoader: NetworkDataLoaderMock { _ in Data([1, 2, 3]) },
+            audioPlayerAPI: AudioPlayerAPIMock(),
+            timerAPI: TimerAPIMock(),
+            nextTrackListener: NextTrackListenerMock([
+                Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01"),
+                Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02")
+            ]),
+            findNextTrackSender: FindNextTrackSenderMock(),
+            logger: LoggerMock()
+        )
+
+        await viewModel.start()
+
+        #expect(viewModel.state == .loaded)
+    }
+
+    @Test func nextTrackResetsProgress() async {
+        let audioMock = AudioPlayerAPIMock()
+        audioMock.currentTime = 30
+        audioMock.duration = 100
+        let timerMock = TimerAPIMock()
+        let viewModel = AudioPlayerViewModelImpl(
+            dataLoader: NetworkDataLoaderMock { _ in Data([1, 2, 3]) },
+            audioPlayerAPI: audioMock,
+            timerAPI: timerMock,
+            nextTrackListener: NextTrackListenerMock([
+                Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01")
+            ]),
+            findNextTrackSender: FindNextTrackSenderMock(),
+            logger: LoggerMock()
+        )
+        await viewModel.start()
+        viewModel.play()
+        timerMock.fire()
+
+        await viewModel.start()
+
+        #expect(viewModel.progress == 0)
+    }
+
+    // MARK: - Auto play
+
+    @Test func autoPlayTrackSetsPlayingState() async {
+        let (viewModel, _, _, _) = makeSUT(autoPlay: true)
+
+        await viewModel.start()
+
+        #expect(viewModel.state == .playing)
+    }
+
+    @Test func autoPlayTrackCallsPlay() async {
+        let (viewModel, audioMock, _, _) = makeSUT(autoPlay: true)
+
+        await viewModel.start()
+
+        #expect(audioMock.playCallCount == 1)
+    }
+
+    @Test func autoPlayTrackInitializesPlayerOnce() async {
+        let (viewModel, audioMock, _, _) = makeSUT(autoPlay: true)
+
+        await viewModel.start()
+
+        #expect(audioMock.initializeCallCount == 1)
+    }
+
+    @Test func autoPlayTrackStartsProgressTimer() async {
+        let (viewModel, _, timerMock, _) = makeSUT(autoPlay: true)
+
+        await viewModel.start()
+
+        #expect(timerMock.startCallCount == 1)
+    }
+
+    @Test func trackWithoutAutoPlayKeepsLoadedState() async {
+        let (viewModel, _, _, _) = makeSUT(autoPlay: false)
+
+        await viewModel.start()
+
+        #expect(viewModel.state == .loaded)
+    }
+
+    @Test func trackWithoutAutoPlayDoesNotCallPlay() async {
+        let (viewModel, audioMock, _, _) = makeSUT(autoPlay: false)
+
+        await viewModel.start()
+
+        #expect(audioMock.playCallCount == 0)
+    }
+
+    @Test func autoPlayAfterLoadFailureDoesNotCallPlay() async {
+        let (viewModel, audioMock, _, _) = makeSUT(downloadError: TestError.failed, autoPlay: true)
+
+        await viewModel.start()
+
+        #expect(audioMock.playCallCount == 0)
+    }
+
+    @Test func autoPlayAfterLoadFailureKeepsErrorState() async {
+        let (viewModel, _, _, _) = makeSUT(downloadError: TestError.failed, autoPlay: true)
+
+        await viewModel.start()
+
+        #expect(isError(viewModel.state))
+    }
+
+    @Test func autoPlayWithInvalidURLDoesNotCallPlay() async {
+        let (viewModel, audioMock, _, _) = makeSUT(url: "", autoPlay: true)
+
+        await viewModel.start()
+
+        #expect(audioMock.playCallCount == 0)
+    }
+
+    @Test func autoPlayAppliesOnlyToTheTracksThatAskForIt() async {
+        let audioMock = AudioPlayerAPIMock()
+        let viewModel = AudioPlayerViewModelImpl(
+            dataLoader: NetworkDataLoaderMock { _ in Data([1, 2, 3]) },
+            audioPlayerAPI: audioMock,
+            timerAPI: TimerAPIMock(),
+            nextTrackListener: NextTrackListenerMock([
+                TrackData(
+                    track: Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01"),
+                    autoPlay: true
+                ),
+                TrackData(
+                    track: Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02"),
+                    autoPlay: false
+                )
+            ]),
+            findNextTrackSender: FindNextTrackSenderMock(),
+            logger: LoggerMock()
+        )
+
+        await viewModel.start()
+
+        #expect(audioMock.playCallCount == 1)
+    }
+
+    @Test func autoPlayOfTheSecondTrackInitializesThePlayerAgain() async {
+        let audioMock = AudioPlayerAPIMock()
+        let viewModel = AudioPlayerViewModelImpl(
+            dataLoader: NetworkDataLoaderMock { _ in Data([1, 2, 3]) },
+            audioPlayerAPI: audioMock,
+            timerAPI: TimerAPIMock(),
+            nextTrackListener: NextTrackListenerMock([
+                Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01"),
+                Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02")
+            ], autoPlay: true),
+            findNextTrackSender: FindNextTrackSenderMock(),
+            logger: LoggerMock()
+        )
+
+        await viewModel.start()
+
+        #expect(audioMock.initializeCallCount == 2)
     }
 }
