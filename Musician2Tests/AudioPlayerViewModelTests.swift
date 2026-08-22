@@ -9,6 +9,13 @@ struct AudioPlayerViewModelTests {
         case failed
     }
 
+    private func isError(_ state: AudioPlayerState) -> Bool {
+        if case .error = state {
+            return true
+        }
+        return false
+    }
+
     let testDuration = "1:01"
 
     private func makeSUT(
@@ -144,7 +151,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.loadTrack()
 
-        #expect(viewModel.state == .error)
+        #expect(isError(viewModel.state))
     }
 
     @Test func loadTrackSuccessSetsLoadedState() async {
@@ -160,7 +167,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.loadTrack()
 
-        #expect(viewModel.state == .error)
+        #expect(isError(viewModel.state))
     }
 
     @Test func loadTrackSetsLoadingStateWhileDownloading() async {
@@ -356,7 +363,7 @@ struct AudioPlayerViewModelTests {
 
         viewModel.play()
 
-        #expect(viewModel.state == .error)
+        #expect(isError(viewModel.state))
     }
 
     @Test func playWhenInitializeFailsDoesNotCallPlay() async {
@@ -398,7 +405,7 @@ struct AudioPlayerViewModelTests {
 
         viewModel.play()
 
-        #expect(viewModel.state == .error)
+        #expect(isError(viewModel.state))
     }
 
     @Test func playAfterLoadFailureDoesNotCallPlay() async {
@@ -416,7 +423,7 @@ struct AudioPlayerViewModelTests {
         await viewModel.loadTrack()
         viewModel.play()
 
-        #expect(viewModel.state == .error)
+        #expect(isError(viewModel.state))
     }
 
     @Test func playWhileLoadingDoesNotCallPlay() async {
