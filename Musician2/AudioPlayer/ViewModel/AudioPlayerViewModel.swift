@@ -23,7 +23,11 @@ protocol AudioPlayerViewModel {
 }
 
 enum AudioPlayerState: Equatable {
-    case initial, loading, loaded, playing, paused, error
+    case initial, loading, loaded, playing, paused, error(WithError)
+}
+
+enum AudioPlayerError: Error {
+    case invalidUrlFor(Track)
 }
 
 @Observable
@@ -78,7 +82,7 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 
         guard let url = URL(string: track.url) else {
             logger.log("The track url = '\(track.url)' is invalid.", level: .error)
-            state = .error
+            state = .error(WithError(AudioPlayerError.invalidUrlFor(track)))
             return
         }
 
@@ -93,7 +97,7 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
             logger.log("The track has been downloaded, \(data.count) bytes.", level: .info)
         } catch {
             logger.log("\(error)", level: .error)
-            state = .error
+            state = .error(WithError(error))
         }
 
         logger.logState(actionName: "loadTrack()", state)
@@ -123,7 +127,7 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
             }
         } catch {
             logger.log("\(error)", level: .error)
-            state = .error
+            state = .error(WithError(error))
         }
 
         logger.logState(actionName: "play()", state)

@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-// AIF: Logging for the AudioPlayer feature.
-
 struct AudioPlayerFeature: View {
 
     private let logger: Logger = LoggerImpl(category: "AudioPlayer")
