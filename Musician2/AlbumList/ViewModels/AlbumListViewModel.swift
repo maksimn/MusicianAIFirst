@@ -18,25 +18,31 @@ final class AlbumListViewModel {
 
     private let albumListLoadedSender: AlbumListLoadedSender
 
-    init(repository: AlbumRepository, albumListLoadedSender: AlbumListLoadedSender) {
+    private let isReversed: Bool
+
+    init(repository: AlbumRepository, albumListLoadedSender: AlbumListLoadedSender, isReversed: Bool = true) {
         self.repository = repository
         self.albumListLoadedSender = albumListLoadedSender
-        self.albums = repository.loadCachedAlbums()
+        self.isReversed = isReversed
     }
 
     @MainActor
     func loadAlbums() async {
+        guard albums.isEmpty else { return }
+
         isLoading = true
         error = nil
 
         do {
             let fetched = try await repository.fetchAlbums()
-            albums = fetched
+            albums = isReversed ? fetched.reversed() : fetched
         } catch {
             self.error = error
             // If network fails, keep showing cached albums.
             if albums.isEmpty {
-                albums = repository.loadCachedAlbums()
+                let cached = repository.loadCachedAlbums()
+
+                albums = isReversed ? cached.reversed() : cached
             }
         }
 

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Track: Equatable, Decodable, Identifiable {
+struct Track: Hashable, Decodable, Identifiable {
 
     let trackId: Int
     let name: String

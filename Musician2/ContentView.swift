@@ -21,11 +21,16 @@ struct ContentView: View {
     }
 
     var body: some View {
-        AlbumListFeature()
-            .task {
-                trackSelector.start()
-            }
-        AudioPlayerFeature()
+        VStack(spacing: 2) {
+            AlbumListFeature()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .task {
+                    CurrentTrackProviderImpl.shared.start()
+                    trackSelector.start()
+                }
+
+            AudioPlayerFeature()
+        }
     }
 }
 
