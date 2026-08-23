@@ -67,11 +67,11 @@ final class TrackSelectorImpl: TrackSelector {
         }
     }
 
-    /// The initial track of the application is the first track of the last loaded album.
+    /// The initial track of the application is the first track of the first album.
     private func selectInitialTrack(from albums: [Album]) {
         logger.log("Received \(albums.count) album(s) from the AlbumListLoaded stream.", level: .info)
 
-        guard let album = albums.last else {
+        guard let album = albums.first else {
             logger.log("The loaded album list is empty, there is nothing to select.", level: .warn)
             return
         }

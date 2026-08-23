@@ -106,3 +106,12 @@ final class FindNextTrackSenderMock: FindNextTrackSender {
         sendCallCount += 1
     }
 }
+
+final class CurrentTrackProviderMock: CurrentTrackProvider {
+
+    var currentTrack: Track?
+
+    init(_ currentTrack: Track? = nil) {
+        self.currentTrack = currentTrack
+    }
+}

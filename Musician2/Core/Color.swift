@@ -62,4 +62,8 @@ extension Color {
         #endif
         return nil
     }
+
+    var toCharacterColor: Color {
+        self.isBright ? Color(red: 0.15, green: 0.15, blue: 0.15) : .white
+    }
 }
