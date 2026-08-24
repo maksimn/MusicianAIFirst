@@ -18,7 +18,7 @@ struct AlbumDetailsView: View {
     }
 
     var body: some View {
-        let album = viewModel.album
+        let album = viewModel.state.album
 
         VStack(spacing: 0) {
             AlbumRowView(album: album) {
@@ -50,7 +50,7 @@ struct AlbumDetailsView: View {
 
     @ViewBuilder
     private func trackRow(_ track: Track, textColor: Color) -> some View {
-        let isSelected = track == viewModel.selectedTrack
+        let isSelected = track == viewModel.state.selectedTrack
 
         HStack(alignment: .center, spacing: 0) {
             Text(isSelected ? "●" : "")

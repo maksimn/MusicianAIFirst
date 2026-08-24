@@ -9,8 +9,8 @@ struct AudioPlayerViewModelTests {
         case failed
     }
 
-    private func isError(_ state: AudioPlayerState) -> Bool {
-        if case .error = state {
+    private func isError(_ condition: AudioPlayerCondition) -> Bool {
+        if case .error = condition {
             return true
         }
         return false
@@ -112,37 +112,37 @@ struct AudioPlayerViewModelTests {
     @Test func initialStateIsInitial() {
         let (viewModel, _, _, _) = makeSUT()
 
-        #expect(viewModel.state == .initial)
+        #expect(viewModel.state.condition == .initial)
     }
 
     @Test func initialTrackIsNil() {
         let (viewModel, _, _, _) = makeSUT()
 
-        #expect(viewModel.track == nil)
+        #expect(viewModel.state.track == nil)
     }
 
     @Test func initialTimeDisplayIsEmptyString() {
         let (viewModel, _, _, _) = makeSUT()
 
-        #expect(viewModel.timeDisplay == "")
+        #expect(viewModel.state.timeDisplay == "")
     }
 
     @Test func initialProgressValueIsOne() {
         let (viewModel, _, _, _) = makeSUT()
 
-        #expect(viewModel.progressValue == 1.0)
+        #expect(viewModel.state.progressValue == 1.0)
     }
 
     @Test func initialProgressIsZero() {
         let (viewModel, _, _, _) = makeSUT()
 
-        #expect(viewModel.progress == 0)
+        #expect(viewModel.state.progress == 0)
     }
 
     @Test func initialCurrentTimeIsZero() {
         let (viewModel, _, _, _) = makeSUT()
 
-        #expect(viewModel.currentTime == 0)
+        #expect(viewModel.state.currentTime == 0)
     }
 
     @Test func startExposesTrackReceivedFromNextTrackAction() async {
@@ -150,7 +150,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.track?.url == "https://example.com/other.mp3")
+        #expect(viewModel.state.track?.url == "https://example.com/other.mp3")
     }
 
     @Test func initSetsItselfAsAudioPlayerDelegate() {
@@ -166,7 +166,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(isError(viewModel.state))
+        #expect(isError(viewModel.state.condition))
     }
 
     @Test func loadTrackSuccessSetsLoadedState() async {
@@ -174,7 +174,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.state == .loaded)
+        #expect(viewModel.state.condition == .loaded)
     }
 
     @Test func loadTrackFailureSetsErrorState() async {
@@ -182,14 +182,14 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(isError(viewModel.state))
+        #expect(isError(viewModel.state.condition))
     }
 
     @Test func loadTrackSetsLoadingStateWhileDownloading() async {
-        var stateDuringDownload: AudioPlayerState?
+        var stateDuringDownload: AudioPlayerCondition?
         var loadingViewModel: AudioPlayerViewModelImpl?
         let dataLoader = NetworkDataLoaderMock { _ in
-            stateDuringDownload = loadingViewModel?.state
+            stateDuringDownload = loadingViewModel?.state.condition
             return Data([1, 2, 3])
         }
         let viewModel = AudioPlayerViewModelImpl(
@@ -214,19 +214,19 @@ struct AudioPlayerViewModelTests {
         await viewModel.start()
         await viewModel.start()
 
-        #expect(viewModel.state == .loaded)
+        #expect(viewModel.state.condition == .loaded)
     }
 
     @Test func loadedStateTimeDisplayShowsTrackDuration() async {
         let (viewModel, _, _) = await makeLoadedViewModel()
 
-        #expect(viewModel.timeDisplay == testDuration)
+        #expect(viewModel.state.timeDisplay == testDuration)
     }
 
     @Test func loadedStateProgressValueIsOne() async {
         let (viewModel, _, _) = await makeLoadedViewModel()
 
-        #expect(viewModel.progressValue == 1.0)
+        #expect(viewModel.state.progressValue == 1.0)
     }
 
     @Test func errorStateTimeDisplayShowsTrackDuration() async {
@@ -234,7 +234,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.timeDisplay == testDuration)
+        #expect(viewModel.state.timeDisplay == testDuration)
     }
 
     // MARK: - Playback control
@@ -252,7 +252,7 @@ struct AudioPlayerViewModelTests {
 
         viewModel.play()
 
-        #expect(viewModel.state == .initial)
+        #expect(viewModel.state.condition == .initial)
     }
 
     @Test func playWithoutLoadedDataDoesNotStartTimer() {
@@ -268,7 +268,7 @@ struct AudioPlayerViewModelTests {
 
         viewModel.play()
 
-        #expect(viewModel.state == .playing)
+        #expect(viewModel.state.condition == .playing)
     }
 
     @Test func playFromLoadedStateCallsPlay() async {
@@ -300,7 +300,7 @@ struct AudioPlayerViewModelTests {
 
         viewModel.play()
 
-        #expect(viewModel.state == .paused)
+        #expect(viewModel.state.condition == .paused)
     }
 
     @Test func playWhilePlayingCallsPause() async {
@@ -342,7 +342,7 @@ struct AudioPlayerViewModelTests {
 
         viewModel.play()
 
-        #expect(viewModel.state == .playing)
+        #expect(viewModel.state.condition == .playing)
     }
 
     @Test func playFromPausedStateDoesNotReinitialize() async {
@@ -379,7 +379,7 @@ struct AudioPlayerViewModelTests {
 
         viewModel.play()
 
-        #expect(isError(viewModel.state))
+        #expect(isError(viewModel.state.condition))
     }
 
     @Test func playWhenInitializeFailsDoesNotCallPlay() async {
@@ -421,7 +421,7 @@ struct AudioPlayerViewModelTests {
 
         viewModel.play()
 
-        #expect(isError(viewModel.state))
+        #expect(isError(viewModel.state.condition))
     }
 
     @Test func playAfterLoadFailureDoesNotCallPlay() async {
@@ -439,7 +439,7 @@ struct AudioPlayerViewModelTests {
         await viewModel.start()
         viewModel.play()
 
-        #expect(isError(viewModel.state))
+        #expect(isError(viewModel.state.condition))
     }
 
     @Test func playWhileLoadingDoesNotCallPlay() async {
@@ -481,7 +481,7 @@ struct AudioPlayerViewModelTests {
 
         timerMock.fire()
 
-        #expect(viewModel.progress == 0.3)
+        #expect(viewModel.state.progress == 0.3)
     }
 
     @Test func progressTimerUpdatesTimeDisplay() async {
@@ -496,7 +496,7 @@ struct AudioPlayerViewModelTests {
 
         timerMock.fire()
 
-        #expect(viewModel.timeDisplay == "0:30")
+        #expect(viewModel.state.timeDisplay == "0:30")
     }
 
     @Test func progressTimerWithZeroDurationKeepsProgressAtZero() async {
@@ -511,7 +511,7 @@ struct AudioPlayerViewModelTests {
 
         timerMock.fire()
 
-        #expect(viewModel.progress == 0)
+        #expect(viewModel.state.progress == 0)
     }
 
     // MARK: - Did finish playing
@@ -521,7 +521,7 @@ struct AudioPlayerViewModelTests {
 
         audioMock.simulateFinishPlaying()
 
-        #expect(viewModel.state == .initial)
+        #expect(viewModel.state.condition == .initial)
     }
 
     @Test func didFinishPlayingStopsTimer() async {
@@ -575,7 +575,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.track?.trackId == 2)
+        #expect(viewModel.state.track?.trackId == 2)
     }
 
     @Test func nextTrackIsLoaded() async {
@@ -594,7 +594,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.state == .loaded)
+        #expect(viewModel.state.condition == .loaded)
     }
 
     @Test func nextTrackResetsProgress() async {
@@ -619,7 +619,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.progress == 0)
+        #expect(viewModel.state.progress == 0)
     }
 
     // MARK: - Auto play
@@ -629,7 +629,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.state == .playing)
+        #expect(viewModel.state.condition == .playing)
     }
 
     @Test func autoPlayTrackCallsPlay() async {
@@ -661,7 +661,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.state == .loaded)
+        #expect(viewModel.state.condition == .loaded)
     }
 
     @Test func trackWithoutAutoPlayDoesNotCallPlay() async {
@@ -685,7 +685,7 @@ struct AudioPlayerViewModelTests {
 
         await viewModel.start()
 
-        #expect(isError(viewModel.state))
+        #expect(isError(viewModel.state.condition))
     }
 
     @Test func autoPlayWithInvalidURLDoesNotCallPlay() async {

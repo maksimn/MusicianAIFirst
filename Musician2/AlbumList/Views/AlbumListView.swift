@@ -8,26 +8,27 @@
 import SwiftUI
 
 struct AlbumListView: View {
-    @State private var viewModel: AlbumListViewModel
+
+    let store: ObservableStore<AlbumListState>
 
     @State private var path: [Album] = []
 
-    init(viewModel: AlbumListViewModel) {
-        _viewModel = State(wrappedValue: viewModel)
+    private var state: AlbumListState {
+        store.state
     }
 
     var body: some View {
         NavigationStack(path: $path) {
             Group {
-                if viewModel.isLoading {
+                if state.isLoading {
                     ProgressView("Loading albums…")
-                } else if let error = viewModel.error, viewModel.albums.isEmpty {
+                } else if let error = state.error, state.albums.isEmpty {
                     ContentUnavailableView(
                         "Failed to load albums",
                         systemImage: "exclamationmark.triangle",
                         description: Text(error.localizedDescription)
                     )
-                } else if viewModel.albums.isEmpty {
+                } else if state.albums.isEmpty {
                     ContentUnavailableView(
                         "No albums",
                         systemImage: "music.note.list",
@@ -41,15 +42,15 @@ struct AlbumListView: View {
             .navigationDestination(for: Album.self) { album in
                 AlbumDetailsFeature(album: album)
             }
-            .task {
-                await viewModel.loadAlbums()
+            .onAppear {
+                store.dispatch(AlbumListAction.loadAlbums)
             }
         }
     }
 
     @ViewBuilder
     private var listContent: some View {
-        List(viewModel.albums) { album in
+        List(state.albums) { album in
             Button {
                 path.append(album)
             } label: {
@@ -61,17 +62,4 @@ struct AlbumListView: View {
         }
         .listStyle(.plain)
     }
-}
-
-#Preview {
-    let repository = AlbumRepository(
-        dataLoader: URLSessionNetworkDataLoader(),
-        cacheService: FileCacheService()
-    )
-    let viewModel = AlbumListViewModel(
-        repository: repository,
-        albumListLoadedSender: AlbumListLoadedStream.shared
-    )
-
-    return AlbumListView(viewModel: viewModel)
 }

@@ -7,7 +7,14 @@
 
 import Foundation
 
-final class AlbumRepository {
+protocol AlbumRepository {
+
+    func fetchAlbums() async throws -> [Album]
+
+    func loadCachedAlbums() -> [Album]
+}
+
+final class AlbumRepositoryImpl: AlbumRepository {
 
     private static let cacheFileName = "albums.json"
 
