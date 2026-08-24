@@ -19,7 +19,7 @@ struct AudioPlayerView: View {
         HStack(spacing: 0) {
             HStack(spacing: 0) {
                 Button(action: viewModel.play) {
-                    if viewModel.state == .playing {
+                    if viewModel.state.condition == .playing {
                         Image("icon-stop")
                             .resizable()
                             .frame(width: 36, height: 36)
@@ -38,7 +38,7 @@ struct AudioPlayerView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 0) {
-                    Text(viewModel.track?.name ?? "")
+                    Text(viewModel.state.track?.name ?? "")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
                         .lineLimit(1)
@@ -46,20 +46,20 @@ struct AudioPlayerView: View {
 
                     Spacer()
 
-                    if viewModel.state == .loading {
+                    if viewModel.state.condition == .loading {
                         ProgressView()
                             .tint(.white)
                             .padding(.trailing, 4)
                     }
 
-                    Text(viewModel.timeDisplay)
+                    Text(viewModel.state.timeDisplay)
                         .font(Font.custom("Helvetica Bold", size: 16))
                         .foregroundColor(.white.opacity(0.8))
                         .padding(.trailing, 20)
                 }
                 .padding(.top, 4)
 
-                ProgressView(value: viewModel.progressValue)
+                ProgressView(value: viewModel.state.progressValue)
                     .tint(.white)
                     .background(.black)
                     .frame(maxWidth: .infinity)

@@ -143,3 +143,60 @@ final class CurrentTrackProviderMock: CurrentTrackProvider {
         self.currentTrack = currentTrack
     }
 }
+
+final class AlbumRepositoryMock: AlbumRepository {
+
+    var fetchResult: Result<[Album], Error> = .success([])
+
+    var cachedAlbums: [Album] = []
+
+    private(set) var fetchCallCount = 0
+    private(set) var loadCachedCallCount = 0
+
+    func fetchAlbums() async throws -> [Album] {
+        fetchCallCount += 1
+
+        return try fetchResult.get()
+    }
+
+    func loadCachedAlbums() -> [Album] {
+        loadCachedCallCount += 1
+
+        return cachedAlbums
+    }
+}
+
+final class AlbumListLoadedSenderMock: AlbumListLoadedSender {
+
+    private(set) var sentAlbumLists: [[Album]] = []
+
+    func send(_ albums: [Album]) {
+        sentAlbumLists.append(albums)
+    }
+}
+
+final class ActionDispatcherMock: ActionDispatcher {
+
+    private(set) var dispatchedActions: [Action] = []
+
+    private let continuation: AsyncStream<Action>.Continuation
+
+    private var iterator: AsyncStream<Action>.AsyncIterator
+
+    init() {
+        let (stream, continuation) = AsyncStream<Action>.makeStream()
+
+        self.continuation = continuation
+        self.iterator = stream.makeAsyncIterator()
+    }
+
+    func dispatch(_ action: Action) {
+        dispatchedActions.append(action)
+        continuation.yield(action)
+    }
+
+    /// Waits for the next dispatched action, so the asynchronous side effects are tested deterministically.
+    func nextDispatchedAction() async -> Action? {
+        await iterator.next()
+    }
+}

@@ -11,10 +11,7 @@ import Observation
 @MainActor
 protocol AlbumDetailsViewModel {
 
-    var album: Album { get }
-
-    /// The track of this album which is selected for the playback, if any.
-    var selectedTrack: Track? { get }
+    var state: AlbumDetailsState { get }
 
     /// Starts listening to the NextTrack action to keep the selected track up to date.
     func start() async
@@ -27,9 +24,7 @@ protocol AlbumDetailsViewModel {
 @MainActor
 final class AlbumDetailsViewModelImpl: AlbumDetailsViewModel {
 
-    let album: Album
-
-    private(set) var selectedTrack: Track?
+    private(set) var state: AlbumDetailsState
 
     private let nextTrackListener: NextTrackListener
 
@@ -43,7 +38,7 @@ final class AlbumDetailsViewModelImpl: AlbumDetailsViewModel {
         currentTrackProvider: CurrentTrackProvider,
         selectTrackSender: SelectTrackSender
     ) {
-        self.album = album
+        self.state = AlbumDetailsState(album: album)
         self.nextTrackListener = nextTrackListener
         self.currentTrackProvider = currentTrackProvider
         self.selectTrackSender = selectTrackSender
@@ -60,16 +55,16 @@ final class AlbumDetailsViewModelImpl: AlbumDetailsViewModel {
     /// The selected track is not changed here: it is updated when the selection
     /// comes back from the track selector through the NextTrack action.
     func selectTrack(_ track: Track) {
-        selectTrackSender.send(TrackSelection(album: album, track: track))
+        selectTrackSender.send(TrackSelection(album: state.album, track: track))
     }
 
     /// Only a track of this album can be shown as selected.
     private func select(_ track: Track?) {
-        guard let track, album.tracks.contains(track) else {
-            selectedTrack = nil
+        guard let track, state.album.tracks.contains(track) else {
+            state.selectedTrack = nil
             return
         }
 
-        selectedTrack = track
+        state.selectedTrack = track
     }
 }

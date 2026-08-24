@@ -44,7 +44,7 @@ struct AlbumDetailsViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.selectedTrack == nil)
+        #expect(viewModel.state.selectedTrack == nil)
     }
 
     @Test
@@ -53,7 +53,7 @@ struct AlbumDetailsViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.selectedTrack == albumTracks[1])
+        #expect(viewModel.state.selectedTrack == albumTracks[1])
     }
 
     @Test
@@ -62,7 +62,7 @@ struct AlbumDetailsViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.selectedTrack == albumTracks[1])
+        #expect(viewModel.state.selectedTrack == albumTracks[1])
     }
 
     @Test
@@ -71,6 +71,6 @@ struct AlbumDetailsViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.selectedTrack == nil)
+        #expect(viewModel.state.selectedTrack == nil)
     }
 }
