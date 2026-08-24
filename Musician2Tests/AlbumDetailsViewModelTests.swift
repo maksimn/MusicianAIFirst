@@ -27,12 +27,14 @@ struct AlbumDetailsViewModelTests {
 
     private func makeSUT(
         currentTrack: Track? = nil,
-        streamedTracks: [Track] = []
+        streamedTracks: [Track] = [],
+        selectTrackSender: SelectTrackSender = SelectTrackSenderMock()
     ) -> AlbumDetailsViewModelImpl {
         AlbumDetailsViewModelImpl(
             album: makeAlbum(),
             nextTrackListener: NextTrackListenerMock(streamedTracks),
-            currentTrackProvider: CurrentTrackProviderMock(currentTrack)
+            currentTrackProvider: CurrentTrackProviderMock(currentTrack),
+            selectTrackSender: selectTrackSender
         )
     }
 

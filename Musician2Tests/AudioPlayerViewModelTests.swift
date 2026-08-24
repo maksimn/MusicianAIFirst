@@ -48,6 +48,7 @@ struct AudioPlayerViewModelTests {
             audioPlayerAPI: audioPlayerAPI,
             timerAPI: timerAPI,
             nextTrackListener: NextTrackListenerMock([makeTrack(url: url)], autoPlay: autoPlay),
+            selectTrackListener: SelectTrackListenerMock(),
             findNextTrackSender: findNextTrackSender,
             logger: LoggerMock()
         )
@@ -196,6 +197,7 @@ struct AudioPlayerViewModelTests {
             audioPlayerAPI: AudioPlayerAPIMock(),
             timerAPI: TimerAPIMock(),
             nextTrackListener: NextTrackListenerMock([makeTrack()]),
+            selectTrackListener: SelectTrackListenerMock(),
             findNextTrackSender: FindNextTrackSenderMock(),
             logger: LoggerMock()
         )
@@ -454,6 +456,7 @@ struct AudioPlayerViewModelTests {
             audioPlayerAPI: audioMock,
             timerAPI: TimerAPIMock(),
             nextTrackListener: NextTrackListenerMock([makeTrack()]),
+            selectTrackListener: SelectTrackListenerMock(),
             findNextTrackSender: FindNextTrackSenderMock(),
             logger: LoggerMock()
         )
@@ -565,6 +568,7 @@ struct AudioPlayerViewModelTests {
                 Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01"),
                 Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02")
             ]),
+            selectTrackListener: SelectTrackListenerMock(),
             findNextTrackSender: FindNextTrackSenderMock(),
             logger: LoggerMock()
         )
@@ -583,6 +587,7 @@ struct AudioPlayerViewModelTests {
                 Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01"),
                 Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02")
             ]),
+            selectTrackListener: SelectTrackListenerMock(),
             findNextTrackSender: FindNextTrackSenderMock(),
             logger: LoggerMock()
         )
@@ -604,6 +609,7 @@ struct AudioPlayerViewModelTests {
             nextTrackListener: NextTrackListenerMock([
                 Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01")
             ]),
+            selectTrackListener: SelectTrackListenerMock(),
             findNextTrackSender: FindNextTrackSenderMock(),
             logger: LoggerMock()
         )
@@ -706,6 +712,7 @@ struct AudioPlayerViewModelTests {
                     autoPlay: false
                 )
             ]),
+            selectTrackListener: SelectTrackListenerMock(),
             findNextTrackSender: FindNextTrackSenderMock(),
             logger: LoggerMock()
         )
@@ -725,6 +732,7 @@ struct AudioPlayerViewModelTests {
                 Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01"),
                 Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02")
             ], autoPlay: true),
+            selectTrackListener: SelectTrackListenerMock(),
             findNextTrackSender: FindNextTrackSenderMock(),
             logger: LoggerMock()
         )

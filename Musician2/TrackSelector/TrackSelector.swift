@@ -23,6 +23,8 @@ final class TrackSelectorImpl: TrackSelector {
 
     private let findNextTrackListener: FindNextTrackListener
 
+    private let selectTrackListener: SelectTrackListener
+
     private let nextTrackSender: NextTrackSender
 
     private let logger: Logger
@@ -31,14 +33,18 @@ final class TrackSelectorImpl: TrackSelector {
 
     private var findNextTrackTask: Task<Void, Never>?
 
+    private var selectTrackTask: Task<Void, Never>?
+
     init(
         albumListLoadedListener: AlbumListLoadedListener,
         findNextTrackListener: FindNextTrackListener,
+        selectTrackListener: SelectTrackListener,
         nextTrackSender: NextTrackSender,
         logger: Logger
     ) {
         self.albumListLoadedListener = albumListLoadedListener
         self.findNextTrackListener = findNextTrackListener
+        self.selectTrackListener = selectTrackListener
         self.nextTrackSender = nextTrackSender
         self.logger = logger
     }
@@ -46,11 +52,13 @@ final class TrackSelectorImpl: TrackSelector {
     deinit {
         albumListTask?.cancel()
         findNextTrackTask?.cancel()
+        selectTrackTask?.cancel()
     }
 
     func start() {
         startListeningToAlbumList()
         startListeningToFindNextTrack()
+        startListeningToSelectTrack()
     }
 
     // MARK: - Initial track selection
@@ -81,7 +89,6 @@ final class TrackSelectorImpl: TrackSelector {
             return
         }
 
-        selectedAlbum = album
         select(track, of: album, autoPlay: false)
     }
 
@@ -118,9 +125,38 @@ final class TrackSelectorImpl: TrackSelector {
         select(album.tracks[nextIndex], of: album, autoPlay: true)
     }
 
+    // MARK: - Track selection by the user
+
+    private func startListeningToSelectTrack() {
+        guard selectTrackTask == nil else { return }
+
+        selectTrackTask = Task { [weak self] in
+            guard let selections = self?.selectTrackListener.selection else { return }
+
+            for await selection in selections {
+                self?.selectRequestedTrack(selection)
+            }
+        }
+    }
+
+    /// The track the user has tapped starts playing right away.
+    /// The already selected track is not sent again: its playback is controlled
+    /// by the audio player, which listens to the SelectTrack action itself.
+    private func selectRequestedTrack(_ selection: TrackSelection) {
+        logger.log("Received a SelectTrack request.", level: .info)
+
+        guard selection.album != selectedAlbum || selection.track != selectedTrack else {
+            logger.log("The '\(selection.track.name)' track is already selected, there is nothing to select.", level: .info)
+            return
+        }
+
+        select(selection.track, of: selection.album, autoPlay: true)
+    }
+
     // MARK: - Helpers
 
     private func select(_ track: Track, of album: Album, autoPlay: Bool) {
+        selectedAlbum = album
         selectedTrack = track
         logger.log("The '\(track.name)' track of the '\(album.albumName)' album has been selected.", level: .info)
 

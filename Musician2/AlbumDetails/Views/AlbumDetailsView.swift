@@ -28,7 +28,12 @@ struct AlbumDetailsView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(album.tracks) { track in
-                        trackRow(track, textColor: album.textColor)
+                        Button {
+                            viewModel.selectTrack(track)
+                        } label: {
+                            trackRow(track, textColor: album.textColor)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.vertical, 8)
@@ -62,5 +67,6 @@ struct AlbumDetailsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 22)
+        .contentShape(Rectangle())
     }
 }

@@ -25,6 +25,16 @@ protocol FindNextTrackListener {
     var notification: AsyncStream<Void> { get }
 }
 
+protocol SelectTrackSender {
+
+    func send(_ selection: TrackSelection)
+}
+
+protocol SelectTrackListener {
+
+    var selection: AsyncStream<TrackSelection> { get }
+}
+
 protocol NextTrackSender {
 
     func send(_ trackData: TrackData)
