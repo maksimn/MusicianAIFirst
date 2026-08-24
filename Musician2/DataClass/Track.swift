@@ -25,3 +25,9 @@ struct TrackData: Equatable {
     let track: Track
     let autoPlay: Bool
 }
+
+/// A track the user has picked in a track list, together with the album the track belongs to.
+struct TrackSelection: Equatable {
+    let album: Album
+    let track: Track
+}

@@ -14,6 +14,7 @@ struct ContentView: View {
     init(trackSelector: TrackSelector = TrackSelectorImpl(
         albumListLoadedListener: AlbumListLoadedStream.shared,
         findNextTrackListener: FindNextTrackStream.shared,
+        selectTrackListener: SelectTrackStream.shared,
         nextTrackSender: NextTrackStream.shared,
         logger: LoggerImpl(category: "TrackSelector")
     )) {

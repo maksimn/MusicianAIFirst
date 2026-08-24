@@ -18,6 +18,7 @@ struct AudioPlayerFeature: View {
                 audioPlayerAPI: LoggingAudioPlayerAPI(decorated: AVAudioPlayerAPI(), logger: logger),
                 timerAPI: LoggingTimerAPI(decorated: TimerAPIImpl(), logger: logger),
                 nextTrackListener: NextTrackStream.shared,
+                selectTrackListener: SelectTrackStream.shared,
                 findNextTrackSender: FindNextTrackStream.shared,
                 logger: logger
             )

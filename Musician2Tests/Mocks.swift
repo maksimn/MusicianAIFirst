@@ -98,12 +98,40 @@ final class NextTrackListenerMock: NextTrackListener {
     }
 }
 
+final class SelectTrackListenerMock: SelectTrackListener {
+
+    private let selections: [TrackSelection]
+
+    init(_ selections: [TrackSelection] = []) {
+        self.selections = selections
+    }
+
+    /// The stream finishes right after the selections are yielded, so listening to it completes deterministically.
+    var selection: AsyncStream<TrackSelection> {
+        AsyncStream { continuation in
+            for selection in selections {
+                continuation.yield(selection)
+            }
+            continuation.finish()
+        }
+    }
+}
+
 final class FindNextTrackSenderMock: FindNextTrackSender {
 
     private(set) var sendCallCount = 0
 
     func send() {
         sendCallCount += 1
+    }
+}
+
+final class SelectTrackSenderMock: SelectTrackSender {
+
+    private(set) var sentSelections: [TrackSelection] = []
+
+    func send(_ selection: TrackSelection) {
+        sentSelections.append(selection)
     }
 }
 

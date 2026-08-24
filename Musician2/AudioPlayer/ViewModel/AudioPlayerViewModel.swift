@@ -20,6 +20,7 @@ protocol AudioPlayerViewModel {
 
     /// Starts listening to the NextTrack action, loads the received tracks
     /// and plays them automatically when the action asks for it.
+    /// Starts listening to the SelectTrack action to apply the track the user has tapped.
     func start() async
 
     func play()
@@ -62,6 +63,8 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 
     private let nextTrackListener: NextTrackListener
 
+    private let selectTrackListener: SelectTrackListener
+
     private let findNextTrackSender: FindNextTrackSender
 
     private let logger: Logger
@@ -71,6 +74,7 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
         audioPlayerAPI: AudioPlayerAPI,
         timerAPI: TimerAPI,
         nextTrackListener: NextTrackListener,
+        selectTrackListener: SelectTrackListener,
         findNextTrackSender: FindNextTrackSender,
         logger: Logger
     ) {
@@ -78,6 +82,7 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
         self.audioPlayerAPI = audioPlayerAPI
         self.timerAPI = timerAPI
         self.nextTrackListener = nextTrackListener
+        self.selectTrackListener = selectTrackListener
         self.findNextTrackSender = findNextTrackSender
         self.logger = logger
         self.audioPlayerAPI.delegate = self
@@ -87,6 +92,14 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 
     @MainActor
     func start() async {
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await self.listenToNextTrack() }
+            group.addTask { await self.listenToSelectTrack() }
+        }
+    }
+
+    @MainActor
+    private func listenToNextTrack() async {
         logger.log("The player has started listening to the NextTrack stream.", level: .info)
 
         for await trackData in nextTrackListener.trackData {
@@ -126,6 +139,39 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
         }
 
         logger.logState(actionName: "loadTrack()", state)
+    }
+
+    // MARK: - Track selection by the user
+
+    @MainActor
+    private func listenToSelectTrack() async {
+        logger.log("The player has started listening to the SelectTrack stream.", level: .info)
+
+        for await selection in selectTrackListener.selection {
+            apply(selection)
+        }
+    }
+
+    /// The current track is either played or left alone, another track is only reset here:
+    /// it comes back to the player through the NextTrack action and is loaded and played then.
+    @MainActor
+    private func apply(_ selection: TrackSelection) {
+        logger.log("The user has selected the '\(selection.track.name)' track.", level: .info)
+
+        guard selection.track == track else {
+            logger.log("The selected track is not the current one, resetting the playback.", level: .info)
+            resetPlayback()
+            return
+        }
+
+        switch state {
+        case .loaded, .paused:
+            logger.log("The current track has been selected, starting its playback.", level: .info)
+            togglePlayback()
+
+        default:
+            logger.log("The current track has been selected, state = \(state), there is nothing to do.", level: .info)
+        }
     }
 
     // MARK: - Playback control
@@ -197,6 +243,10 @@ final class AudioPlayerViewModelImpl: AudioPlayerViewModel {
 
     @MainActor
     private func resetPlayback() {
+        if state == .playing {
+            audioPlayerAPI.pause()
+        }
+
         timerAPI.stop()
         data = nil
         currentTime = 0

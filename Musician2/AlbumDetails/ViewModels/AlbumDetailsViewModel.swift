@@ -18,6 +18,9 @@ protocol AlbumDetailsViewModel {
 
     /// Starts listening to the NextTrack action to keep the selected track up to date.
     func start() async
+
+    /// Asks the track selector to select the tapped track and to start its playback.
+    func selectTrack(_ track: Track)
 }
 
 @Observable
@@ -32,14 +35,18 @@ final class AlbumDetailsViewModelImpl: AlbumDetailsViewModel {
 
     private let currentTrackProvider: CurrentTrackProvider
 
+    private let selectTrackSender: SelectTrackSender
+
     init(
         album: Album,
         nextTrackListener: NextTrackListener,
-        currentTrackProvider: CurrentTrackProvider
+        currentTrackProvider: CurrentTrackProvider,
+        selectTrackSender: SelectTrackSender
     ) {
         self.album = album
         self.nextTrackListener = nextTrackListener
         self.currentTrackProvider = currentTrackProvider
+        self.selectTrackSender = selectTrackSender
     }
 
     func start() async {
@@ -48,6 +55,12 @@ final class AlbumDetailsViewModelImpl: AlbumDetailsViewModel {
         for await trackData in nextTrackListener.trackData {
             select(trackData.track)
         }
+    }
+
+    /// The selected track is not changed here: it is updated when the selection
+    /// comes back from the track selector through the NextTrack action.
+    func selectTrack(_ track: Track) {
+        selectTrackSender.send(TrackSelection(album: album, track: track))
     }
 
     /// Only a track of this album can be shown as selected.
