@@ -16,7 +16,8 @@ struct AlbumDetailsFeature: View {
             viewModel: AlbumDetailsViewModelImpl(
                 album: album,
                 nextTrackListener: NextTrackStream.shared,
-                currentTrackProvider: CurrentTrackProviderImpl.shared
+                currentTrackProvider: CurrentTrackProviderImpl.shared,
+                nextTrackSender: NextTrackStream.shared
             )
         )
     }

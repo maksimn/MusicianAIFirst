@@ -70,8 +70,37 @@ final class TimerAPIMock: TimerAPI {
     }
 }
 
+/// Records what has been logged and lets a test wait for a message. The listeners run in tasks
+/// of their own, so waiting for what they log is the way to tell that they have handled a value.
 final class LoggerMock: Logger {
+
+    private(set) var messages: [String] = []
+
+    private let logged: AsyncStream<String>
+
+    private let continuation: AsyncStream<String>.Continuation
+
+    init() {
+        (logged, continuation) = AsyncStream.makeStream()
+    }
+
     func log(_ message: String, level: LogLevel) {
+        messages.append(message)
+        continuation.yield(message)
+    }
+
+    /// Returns as soon as a message containing the given text has been logged, whether it has
+    /// been logged before or after the call.
+    func waitForMessage(containing text: String) async {
+        guard !messages.contains(where: { $0.contains(text) }) else { return }
+
+        var iterator = logged.makeAsyncIterator()
+
+        while let message = await iterator.next() {
+            if message.contains(text) {
+                return
+            }
+        }
     }
 }
 
@@ -83,8 +112,8 @@ final class NextTrackListenerMock: NextTrackListener {
         self.trackDataList = trackDataList
     }
 
-    init(_ tracks: [Track], autoPlay: Bool = false) {
-        self.trackDataList = tracks.map { TrackData(track: $0, autoPlay: autoPlay) }
+    init(_ tracks: [Track], album: Album? = nil, autoPlay: Bool = false) {
+        self.trackDataList = tracks.map { TrackData(track: $0, album: album, autoPlay: autoPlay) }
     }
 
     /// The stream finishes right after the tracks are yielded, so listening to it completes deterministically.
@@ -113,5 +142,53 @@ final class CurrentTrackProviderMock: CurrentTrackProvider {
 
     init(_ currentTrack: Track? = nil) {
         self.currentTrack = currentTrack
+    }
+}
+
+/// A listener whose stream is driven by the test: the values are yielded on demand
+/// and the stream stays open until the mock is released.
+final class AlbumListLoadedListenerMock: AlbumListLoadedListener {
+
+    let albumList: AsyncStream<[Album]>
+
+    private let continuation: AsyncStream<[Album]>.Continuation
+
+    init() {
+        (albumList, continuation) = AsyncStream.makeStream()
+    }
+
+    func send(_ albums: [Album]) {
+        continuation.yield(albums)
+    }
+}
+
+final class FindNextTrackListenerMock: FindNextTrackListener {
+
+    let notification: AsyncStream<Void>
+
+    private let continuation: AsyncStream<Void>.Continuation
+
+    init() {
+        (notification, continuation) = AsyncStream.makeStream()
+    }
+
+    func send() {
+        continuation.yield(())
+    }
+}
+
+/// Records what its owner sends as a stream, so a test may await the sent values in order.
+final class NextTrackSenderMock: NextTrackSender {
+
+    let sentTrackData: AsyncStream<TrackData>
+
+    private let continuation: AsyncStream<TrackData>.Continuation
+
+    init() {
+        (sentTrackData, continuation) = AsyncStream.makeStream()
+    }
+
+    func send(_ trackData: TrackData) {
+        continuation.yield(trackData)
     }
 }

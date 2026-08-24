@@ -27,12 +27,14 @@ struct AlbumDetailsViewModelTests {
 
     private func makeSUT(
         currentTrack: Track? = nil,
-        streamedTracks: [Track] = []
+        streamedTracks: [Track] = [],
+        nextTrackSender: NextTrackSender = NextTrackSenderMock()
     ) -> AlbumDetailsViewModelImpl {
         AlbumDetailsViewModelImpl(
             album: makeAlbum(),
             nextTrackListener: NextTrackListenerMock(streamedTracks),
-            currentTrackProvider: CurrentTrackProviderMock(currentTrack)
+            currentTrackProvider: CurrentTrackProviderMock(currentTrack),
+            nextTrackSender: nextTrackSender
         )
     }
 
@@ -68,6 +70,26 @@ struct AlbumDetailsViewModelTests {
         let viewModel = makeSUT(currentTrack: albumTracks[0], streamedTracks: [foreignTrack])
 
         await viewModel.start()
+
+        #expect(viewModel.selectedTrack == nil)
+    }
+
+    @Test
+    func tappedTrackIsSentWithItsAlbumAndStartsPlaying() async {
+        let sender = NextTrackSenderMock()
+        let viewModel = makeSUT(nextTrackSender: sender)
+        var sentTrackData = sender.sentTrackData.makeAsyncIterator()
+
+        viewModel.selectTrack(albumTracks[1])
+
+        #expect(await sentTrackData.next() == TrackData(track: albumTracks[1], album: makeAlbum(), autoPlay: true))
+    }
+
+    @Test
+    func tappedTrackIsShownAsSelectedOnlyWhenItComesBackFromTheNextTrackStream() {
+        let viewModel = makeSUT()
+
+        viewModel.selectTrack(albumTracks[0])
 
         #expect(viewModel.selectedTrack == nil)
     }

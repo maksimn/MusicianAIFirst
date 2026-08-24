@@ -699,10 +699,12 @@ struct AudioPlayerViewModelTests {
             nextTrackListener: NextTrackListenerMock([
                 TrackData(
                     track: Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01"),
+                    album: nil,
                     autoPlay: true
                 ),
                 TrackData(
                     track: Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02"),
+                    album: nil,
                     autoPlay: false
                 )
             ]),

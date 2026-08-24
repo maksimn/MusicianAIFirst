@@ -23,5 +23,9 @@ struct Track: Hashable, Decodable, Identifiable {
 
 struct TrackData: Equatable {
     let track: Track
+
+    /// The album the track belongs to. It is `nil` when the track comes from a source other than an album.
+    let album: Album?
+
     let autoPlay: Bool
 }

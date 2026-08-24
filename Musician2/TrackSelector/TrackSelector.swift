@@ -23,6 +23,8 @@ final class TrackSelectorImpl: TrackSelector {
 
     private let findNextTrackListener: FindNextTrackListener
 
+    private let nextTrackListener: NextTrackListener
+
     private let nextTrackSender: NextTrackSender
 
     private let logger: Logger
@@ -31,14 +33,18 @@ final class TrackSelectorImpl: TrackSelector {
 
     private var findNextTrackTask: Task<Void, Never>?
 
+    private var nextTrackTask: Task<Void, Never>?
+
     init(
         albumListLoadedListener: AlbumListLoadedListener,
         findNextTrackListener: FindNextTrackListener,
+        nextTrackListener: NextTrackListener,
         nextTrackSender: NextTrackSender,
         logger: Logger
     ) {
         self.albumListLoadedListener = albumListLoadedListener
         self.findNextTrackListener = findNextTrackListener
+        self.nextTrackListener = nextTrackListener
         self.nextTrackSender = nextTrackSender
         self.logger = logger
     }
@@ -46,11 +52,13 @@ final class TrackSelectorImpl: TrackSelector {
     deinit {
         albumListTask?.cancel()
         findNextTrackTask?.cancel()
+        nextTrackTask?.cancel()
     }
 
     func start() {
         startListeningToAlbumList()
         startListeningToFindNextTrack()
+        startListeningToNextTrack()
     }
 
     // MARK: - Initial track selection
@@ -81,7 +89,6 @@ final class TrackSelectorImpl: TrackSelector {
             return
         }
 
-        selectedAlbum = album
         select(track, of: album, autoPlay: false)
     }
 
@@ -103,8 +110,13 @@ final class TrackSelectorImpl: TrackSelector {
     private func selectNextTrack() {
         logger.log("Received a FindNextTrack request.", level: .info)
 
-        guard let album = selectedAlbum, let track = selectedTrack else {
+        guard let track = selectedTrack else {
             logger.log("No track has been selected yet, there is no next track to find.", level: .warn)
+            return
+        }
+
+        guard let album = selectedAlbum else {
+            logger.log("The '\(track.name)' track is not from an album, there is no next track to find.", level: .warn)
             return
         }
 
@@ -118,12 +130,41 @@ final class TrackSelectorImpl: TrackSelector {
         select(album.tracks[nextIndex], of: album, autoPlay: true)
     }
 
+    // MARK: - Track selection made by other features
+
+    /// Any feature may select a track by sending the NextTrack action, so the selection is kept
+    /// up to date by listening to that action. The tracks sent by the selector itself come back here
+    /// as well, which changes nothing: they have already been remembered by `select(_:of:autoPlay:)`.
+    private func startListeningToNextTrack() {
+        guard nextTrackTask == nil else { return }
+
+        nextTrackTask = Task { [weak self] in
+            guard let trackData = self?.nextTrackListener.trackData else { return }
+
+            for await data in trackData {
+                self?.rememberSelection(data)
+            }
+        }
+    }
+
+    private func rememberSelection(_ trackData: TrackData) {
+        logger.log("The '\(trackData.track.name)' track has been received from the NextTrack stream.", level: .info)
+
+        remember(trackData.track, of: trackData.album)
+    }
+
     // MARK: - Helpers
 
     private func select(_ track: Track, of album: Album, autoPlay: Bool) {
-        selectedTrack = track
+        remember(track, of: album)
         logger.log("The '\(track.name)' track of the '\(album.albumName)' album has been selected.", level: .info)
 
-        nextTrackSender.send(TrackData(track: track, autoPlay: autoPlay))
+        nextTrackSender.send(TrackData(track: track, album: album, autoPlay: autoPlay))
+    }
+
+    /// The track the next one is looked for from, and the album it is looked for in.
+    private func remember(_ track: Track, of album: Album?) {
+        selectedTrack = track
+        selectedAlbum = album
     }
 }
