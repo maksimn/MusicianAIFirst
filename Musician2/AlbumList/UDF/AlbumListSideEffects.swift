@@ -5,8 +5,10 @@
 //  Created by Maksim Ivanov on 25.08.2026.
 //
 
+import UDF
+
 /// Fetches the albums from the repository and dispatches the result back to the store.
-struct LoadAlbumsSideEffect: SideEffect {
+struct LoadAlbumsSideEffect: SideEffectProtocol {
 
     let repository: AlbumRepository
 
@@ -24,23 +26,11 @@ struct LoadAlbumsSideEffect: SideEffect {
 }
 
 /// Reads the albums cached by the previous successful fetching.
-struct LoadCachedAlbumsSideEffect: SideEffect {
+struct LoadCachedAlbumsSideEffect: SideEffectProtocol {
 
     let repository: AlbumRepository
 
     func execute(with dispatcher: ActionDispatcher) {
-        dispatcher.dispatch(AlbumListAction.cachedAlbumsLoaded(repository.loadCachedAlbums()))
-    }
-}
-
-/// Notifies the other features about the loaded albums.
-struct AlbumListLoadedSideEffect: SideEffect {
-
-    let albums: [Album]
-
-    let sender: AlbumListLoadedSender
-
-    func execute(with dispatcher: ActionDispatcher) {
-        sender.send(albums)
+        dispatcher.dispatch(AlbumListAction.albumsLoaded(repository.loadCachedAlbums()))
     }
 }

@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0CED7431303D41D900F2B6EC /* UDF in Frameworks */ = {isa = PBXBuildFile; productRef = 0CED7430303D41D900F2B6EC /* UDF */; };
+		0CED7433303D41D900F2B6EC /* UDF in Frameworks */ = {isa = PBXBuildFile; productRef = 0CED7432303D41D900F2B6EC /* UDF */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		0C4CF2DE2FF4350500A3EC82 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +57,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0CED7431303D41D900F2B6EC /* UDF in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,6 +65,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0CED7433303D41D900F2B6EC /* UDF in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,6 +110,7 @@
 			);
 			name = Musician2;
 			packageProductDependencies = (
+				0CED7430303D41D900F2B6EC /* UDF */,
 			);
 			productName = Musician2;
 			productReference = 0C4CF2CE2FF4350300A3EC82 /* Musician2.app */;
@@ -126,6 +134,7 @@
 			);
 			name = Musician2Tests;
 			packageProductDependencies = (
+				0CED7432303D41D900F2B6EC /* UDF */,
 			);
 			productName = Musician2Tests;
 			productReference = 0C4CF2DD2FF4350500A3EC82 /* Musician2Tests.xctest */;
@@ -159,6 +168,9 @@
 			);
 			mainGroup = 0C4CF2C52FF4350300A3EC82;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0CED742F303D41D900F2B6EC /* XCRemoteSwiftPackageReference "UDF" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0C4CF2CF2FF4350300A3EC82 /* Products */;
 			projectDirPath = "";
@@ -469,6 +481,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0CED742F303D41D900F2B6EC /* XCRemoteSwiftPackageReference "UDF" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/inDriver/UDF";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.9;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0CED7430303D41D900F2B6EC /* UDF */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0CED742F303D41D900F2B6EC /* XCRemoteSwiftPackageReference "UDF" */;
+			productName = UDF;
+		};
+		0CED7432303D41D900F2B6EC /* UDF */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0CED742F303D41D900F2B6EC /* XCRemoteSwiftPackageReference "UDF" */;
+			productName = UDF;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0C4CF2C62FF4350300A3EC82 /* Project object */;
 }

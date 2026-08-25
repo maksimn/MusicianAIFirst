@@ -6,22 +6,17 @@
 //
 
 import SwiftUI
+import UDF
 
 struct AudioPlayerFeature: View {
 
-    private let logger: Logger = LoggerImpl(category: "AudioPlayer")
+    @State private var store: ObservableStore<AudioPlayerState>
+
+    init(store: Store<AudioPlayerState>) {
+        _store = State(wrappedValue: ObservableStore(store))
+    }
 
     var body: some View {
-        AudioPlayerView(
-            viewModel: AudioPlayerViewModelImpl(
-                dataLoader: URLSessionNetworkDataLoader(),
-                audioPlayerAPI: LoggingAudioPlayerAPI(decorated: AVAudioPlayerAPI(), logger: logger),
-                timerAPI: LoggingTimerAPI(decorated: TimerAPIImpl(), logger: logger),
-                nextTrackListener: NextTrackStream.shared,
-                selectTrackListener: SelectTrackStream.shared,
-                findNextTrackSender: FindNextTrackStream.shared,
-                logger: logger
-            )
-        )
+        AudioPlayerView(store: store)
     }
 }

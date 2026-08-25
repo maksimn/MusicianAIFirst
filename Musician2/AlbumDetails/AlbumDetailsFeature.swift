@@ -6,19 +6,17 @@
 //
 
 import SwiftUI
+import UDF
 
 struct AlbumDetailsFeature: View {
 
-    let album: Album
+    @State private var store: ObservableStore<AlbumDetailsState>
+
+    init(store: Store<AlbumDetailsState>) {
+        _store = State(wrappedValue: ObservableStore(store))
+    }
 
     var body: some View {
-        AlbumDetailsView(
-            viewModel: AlbumDetailsViewModelImpl(
-                album: album,
-                nextTrackListener: NextTrackStream.shared,
-                currentTrackProvider: CurrentTrackProviderImpl.shared,
-                selectTrackSender: SelectTrackStream.shared
-            )
-        )
+        AlbumDetailsView(store: store)
     }
 }

@@ -6,23 +6,24 @@
 //
 
 import SwiftUI
+import UDF
 
 struct AlbumListFeature: View {
 
-    @State private var store = ObservableStore(
-        Store(
-            initialState: AlbumListState(),
-            reducer: AlbumListReducer(
-                repository: AlbumRepositoryImpl(
-                    dataLoader: URLSessionNetworkDataLoader(),
-                    cacheService: FileCacheService()
-                ),
-                albumListLoadedSender: AlbumListLoadedStream.shared
-            ).reduce
-        )
-    )
+    private let albumDetailsStore: Store<AlbumDetailsState>
+
+    @State private var store: ObservableStore<AlbumListState>
+
+    init(store: Store<AppState>) {
+        self.albumDetailsStore = store.scope(\.albumDetails)
+        _store = State(wrappedValue: ObservableStore(store.scope(\.albumList)))
+    }
 
     var body: some View {
-        AlbumListView(store: store)
+        AlbumListView(store: store) {
+            // The tapped album is already in the state of the album details feature:
+            // it has been put there by the AlbumTapped action.
+            AlbumDetailsFeature(store: albumDetailsStore)
+        }
     }
 }
