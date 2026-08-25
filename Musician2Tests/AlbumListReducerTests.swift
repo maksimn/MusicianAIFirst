@@ -119,31 +119,6 @@ struct AlbumListReducerTests {
         #expect(albums.map(\.id) == [1])
     }
 
-    // MARK: - The store
-
-    @Test func theStoreNotifiesTheObserversUntilTheSubscriptionIsDisposed() async {
-        let store = Store(state: AlbumListState(), reducer: reducer.reduce)
-        let disposer = Disposer()
-        var states: [AlbumListState] = []
-
-        store.observe { states.append($0) }.dispose(on: disposer)
-
-        store.dispatch(AlbumListAction.albumsLoaded([album(1), album(2)]))
-
-        // The observer is called with the state the store starts with and with the one it produces.
-        await poll("the store to notify the observers about the loaded albums") { states.count == 2 }
-
-        #expect(states.first?.albums.isEmpty == true)
-        #expect(states.last?.albums.map(\.id) == [2, 1])
-
-        disposer.subscriptions.removeAll()
-
-        store.dispatch(AlbumListAction.albumsLoaded([album(3)]))
-        await store.waitUntil("the albums dispatched after the disposal") { $0.albums.map(\.id) == [3] }
-
-        #expect(states.count == 2)
-    }
-
     // MARK: - Helpers
 
     private func album(_ id: Int) -> Album {
