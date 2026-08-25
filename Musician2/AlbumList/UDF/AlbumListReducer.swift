@@ -5,6 +5,8 @@
 //  Created by Maksim Ivanov on 25.08.2026.
 //
 
+import UDF
+
 /// Produces the new state of the album list feature for every dispatched action.
 ///
 /// The reducer itself only changes the state: everything else — fetching, reading the cache,
@@ -13,17 +15,11 @@ struct AlbumListReducer {
 
     private let repository: AlbumRepository
 
-    private let albumListLoadedSender: AlbumListLoadedSender
-
-    private let isReversed: Bool
-
-    init(repository: AlbumRepository, albumListLoadedSender: AlbumListLoadedSender, isReversed: Bool = true) {
+    init(repository: AlbumRepository) {
         self.repository = repository
-        self.albumListLoadedSender = albumListLoadedSender
-        self.isReversed = isReversed
     }
 
-    func reduce(_ state: inout AlbumListState, _ action: Action) -> SideEffect? {
+    func reduce(_ state: inout AlbumListState, _ action: Action) -> SideEffect {
         guard let action = action as? AlbumListAction else { return nil }
 
         switch action {
@@ -37,9 +33,9 @@ struct AlbumListReducer {
 
         case .albumsLoaded(let albums):
             state.isLoading = false
-            state.albums = ordered(albums)
+            state.albums = albums.sorted(by: { $0.albumYear > $1.albumYear })
 
-            return albumListLoadedSideEffect(for: state)
+            return nil
 
         case .loadingFailed(let error):
             state.isLoading = false
@@ -48,20 +44,8 @@ struct AlbumListReducer {
             // If network fails, keep showing cached albums.
             return state.albums.isEmpty ? LoadCachedAlbumsSideEffect(repository: repository) : nil
 
-        case .cachedAlbumsLoaded(let albums):
-            state.albums = ordered(albums)
-
-            return albumListLoadedSideEffect(for: state)
+        default:
+            return nil
         }
-    }
-
-    private func ordered(_ albums: [Album]) -> [Album] {
-        isReversed ? albums.reversed() : albums
-    }
-
-    private func albumListLoadedSideEffect(for state: AlbumListState) -> SideEffect? {
-        guard !state.albums.isEmpty else { return nil }
-
-        return AlbumListLoadedSideEffect(albums: state.albums, sender: albumListLoadedSender)
     }
 }

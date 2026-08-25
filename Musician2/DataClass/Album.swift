@@ -22,3 +22,9 @@ struct Album: Hashable, Decodable, Identifiable {
         case albumId, albumName, albumYear, albumCover, albumMedianColor, tracks
     }
 }
+
+extension Album: CustomStringConvertible {
+    var description: String {
+        return "Album(id: \(id), name: \(albumName)), year: \(albumYear))"
+    }
+}

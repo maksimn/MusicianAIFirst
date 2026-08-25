@@ -7,9 +7,11 @@
 
 import SwiftUI
 
-struct AlbumListView: View {
+struct AlbumListView<Details: View>: View {
 
     let store: ObservableStore<AlbumListState>
+
+    @ViewBuilder let details: () -> Details
 
     @State private var path: [Album] = []
 
@@ -39,8 +41,8 @@ struct AlbumListView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Album.self) { album in
-                AlbumDetailsFeature(album: album)
+            .navigationDestination(for: Album.self) { _ in
+                details()
             }
             .onAppear {
                 store.dispatch(AlbumListAction.loadAlbums)
@@ -52,6 +54,7 @@ struct AlbumListView: View {
     private var listContent: some View {
         List(state.albums) { album in
             Button {
+                store.dispatch(AlbumListAction.albumTapped(album))
                 path.append(album)
             } label: {
                 AlbumRowView(album: album)

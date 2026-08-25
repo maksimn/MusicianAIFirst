@@ -9,17 +9,24 @@ import SwiftUI
 
 struct AlbumDetailsView: View {
 
-    @State private var viewModel: AlbumDetailsViewModel
+    let store: ObservableStore<AlbumDetailsState>
 
     @Environment(\.dismiss) private var dismiss
 
-    init(viewModel: some AlbumDetailsViewModel) {
-        _viewModel = State(wrappedValue: viewModel)
+    var body: some View {
+        Group {
+            if let album = store.state.album {
+                content(of: album)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(store.state.album?.color ?? .clear)
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
-    var body: some View {
-        let album = viewModel.state.album
-
+    @ViewBuilder
+    private func content(of album: Album) -> some View {
         VStack(spacing: 0) {
             AlbumRowView(album: album) {
                 dismiss()
@@ -29,7 +36,7 @@ struct AlbumDetailsView: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(album.tracks) { track in
                         Button {
-                            viewModel.selectTrack(track)
+                            store.dispatch(AlbumDetailsAction.trackTapped(track, album))
                         } label: {
                             trackRow(track, textColor: album.textColor)
                         }
@@ -38,19 +45,13 @@ struct AlbumDetailsView: View {
                 }
                 .padding(.vertical, 8)
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(album.color)
-        .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
-        .task {
-            await viewModel.start()
+            .padding(.top, 18)
         }
     }
 
     @ViewBuilder
     private func trackRow(_ track: Track, textColor: Color) -> some View {
-        let isSelected = track == viewModel.state.selectedTrack
+        let isSelected = track.id == store.state.currentTrack?.id
 
         HStack(alignment: .center, spacing: 0) {
             Text(isSelected ? "●" : "")
@@ -66,7 +67,8 @@ struct AlbumDetailsView: View {
             Spacer(minLength: 16)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 22)
+        .padding(.top, 11)
+        .padding(.bottom, 11)
         .contentShape(Rectangle())
     }
 }

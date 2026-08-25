@@ -6,6 +6,7 @@
 //
 
 import Observation
+import UDF
 
 /// Makes the state of a store observable by SwiftUI.
 ///
@@ -20,15 +21,16 @@ final class ObservableStore<State>: ActionDispatcher {
     private let store: Store<State>
 
     @ObservationIgnored
-    private var subscription: Store<State>.Subscription?
+    private let disposer = Disposer()
 
     init(_ store: Store<State>) {
         self.state = store.state
         self.store = store
 
-        subscription = store.subscribe { [weak self] state in
+        store.observe { [weak self] state in
             self?.state = state
         }
+        .dispose(on: disposer)
     }
 
     func dispatch(_ action: Action) {

@@ -1,15 +1,15 @@
 @testable import Musician2
 import Foundation
 import Testing
+import UDF
 
 @MainActor
 struct AlbumListReducerTests {
 
     private let repository = AlbumRepositoryMock()
-    private let sender = AlbumListLoadedSenderMock()
 
     private var reducer: AlbumListReducer {
-        AlbumListReducer(repository: repository, albumListLoadedSender: sender)
+        AlbumListReducer(repository: repository)
     }
 
     // MARK: - Reducer
@@ -41,33 +41,13 @@ struct AlbumListReducerTests {
         #expect(sideEffect == nil)
     }
 
-    @Test func loadedAlbumsAreReversedAndSent() throws {
+    @Test func loadedAlbumsAreSortedByTheirYearNewestFirst() {
         var state = AlbumListState(isLoading: true)
 
         let sideEffect = reducer.reduce(&state, AlbumListAction.albumsLoaded([album(1), album(2)]))
 
         #expect(!state.isLoading)
         #expect(state.albums.map(\.id) == [2, 1])
-
-        let loadedSideEffect = try #require(sideEffect as? AlbumListLoadedSideEffect)
-
-        #expect(loadedSideEffect.albums.map(\.id) == [2, 1])
-    }
-
-    @Test func loadedAlbumsKeepTheirOrderWhenTheReducerIsNotReversed() {
-        var state = AlbumListState()
-        let reducer = AlbumListReducer(repository: repository, albumListLoadedSender: sender, isReversed: false)
-
-        _ = reducer.reduce(&state, AlbumListAction.albumsLoaded([album(1), album(2)]))
-
-        #expect(state.albums.map(\.id) == [1, 2])
-    }
-
-    @Test func anEmptyAlbumListIsNotSent() {
-        var state = AlbumListState()
-
-        let sideEffect = reducer.reduce(&state, AlbumListAction.albumsLoaded([]))
-
         #expect(sideEffect == nil)
     }
 
@@ -89,15 +69,6 @@ struct AlbumListReducerTests {
         #expect(state.albums.map(\.id) == [1])
         #expect(state.error != nil)
         #expect(sideEffect == nil)
-    }
-
-    @Test func cachedAlbumsAreShownAndSent() {
-        var state = AlbumListState(error: TestError.some)
-
-        let sideEffect = reducer.reduce(&state, AlbumListAction.cachedAlbumsLoaded([album(1), album(2)]))
-
-        #expect(state.albums.map(\.id) == [2, 1])
-        #expect(sideEffect is AlbumListLoadedSideEffect)
     }
 
     // MARK: - Side effects
@@ -140,7 +111,7 @@ struct AlbumListReducerTests {
 
         let action = try #require(dispatcher.dispatchedActions.first as? AlbumListAction)
 
-        guard case .cachedAlbumsLoaded(let albums) = action else {
+        guard case .albumsLoaded(let albums) = action else {
             Issue.record("Unexpected action: \(action)")
             return
         }
@@ -150,22 +121,25 @@ struct AlbumListReducerTests {
 
     // MARK: - The store
 
-    @Test func theStoreNotifiesTheSubscribersAndRunsTheSideEffects() {
-        let store = Store(initialState: AlbumListState(), reducer: reducer.reduce)
+    @Test func theStoreNotifiesTheObserversUntilTheSubscriptionIsDisposed() async {
+        let store = Store(state: AlbumListState(), reducer: reducer.reduce)
+        let disposer = Disposer()
         var states: [AlbumListState] = []
 
-        let subscription = store.subscribe { states.append($0) }
+        store.observe { states.append($0) }.dispose(on: disposer)
 
         store.dispatch(AlbumListAction.albumsLoaded([album(1), album(2)]))
 
-        #expect(states.count == 2)
+        // The observer is called with the state the store starts with and with the one it produces.
+        await poll("the store to notify the observers about the loaded albums") { states.count == 2 }
+
         #expect(states.first?.albums.isEmpty == true)
         #expect(states.last?.albums.map(\.id) == [2, 1])
-        #expect(sender.sentAlbumLists.map { $0.map(\.id) } == [[2, 1]])
 
-        subscription.cancel()
+        disposer.subscriptions.removeAll()
 
         store.dispatch(AlbumListAction.albumsLoaded([album(3)]))
+        await store.waitUntil("the albums dispatched after the disposal") { $0.albums.map(\.id) == [3] }
 
         #expect(states.count == 2)
     }
@@ -176,7 +150,7 @@ struct AlbumListReducerTests {
         Album(
             albumId: id,
             albumName: "Album \(id)",
-            albumYear: 2026,
+            albumYear: 2000 + id,
             albumCover: "",
             albumMedianColor: "#000000",
             tracks: []

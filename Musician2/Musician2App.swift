@@ -7,12 +7,15 @@
 
 import SwiftUI
 
+private let builder = AppBuilder()
+private let store = builder.build()
+
 @main
 struct Musician2App: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppView(store: store)
         }
     }
 }

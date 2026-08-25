@@ -1,5 +1,7 @@
 @testable import Musician2
 import Foundation
+import Testing
+import UDF
 
 final class AudioPlayerAPIMock: AudioPlayerAPI {
 
@@ -70,80 +72,6 @@ final class TimerAPIMock: TimerAPI {
     }
 }
 
-final class LoggerMock: Logger {
-    func log(_ message: String, level: LogLevel) {
-    }
-}
-
-final class NextTrackListenerMock: NextTrackListener {
-
-    private let trackDataList: [TrackData]
-
-    init(_ trackDataList: [TrackData]) {
-        self.trackDataList = trackDataList
-    }
-
-    init(_ tracks: [Track], autoPlay: Bool = false) {
-        self.trackDataList = tracks.map { TrackData(track: $0, autoPlay: autoPlay) }
-    }
-
-    /// The stream finishes right after the tracks are yielded, so listening to it completes deterministically.
-    var trackData: AsyncStream<TrackData> {
-        AsyncStream { continuation in
-            for trackData in trackDataList {
-                continuation.yield(trackData)
-            }
-            continuation.finish()
-        }
-    }
-}
-
-final class SelectTrackListenerMock: SelectTrackListener {
-
-    private let selections: [TrackSelection]
-
-    init(_ selections: [TrackSelection] = []) {
-        self.selections = selections
-    }
-
-    /// The stream finishes right after the selections are yielded, so listening to it completes deterministically.
-    var selection: AsyncStream<TrackSelection> {
-        AsyncStream { continuation in
-            for selection in selections {
-                continuation.yield(selection)
-            }
-            continuation.finish()
-        }
-    }
-}
-
-final class FindNextTrackSenderMock: FindNextTrackSender {
-
-    private(set) var sendCallCount = 0
-
-    func send() {
-        sendCallCount += 1
-    }
-}
-
-final class SelectTrackSenderMock: SelectTrackSender {
-
-    private(set) var sentSelections: [TrackSelection] = []
-
-    func send(_ selection: TrackSelection) {
-        sentSelections.append(selection)
-    }
-}
-
-final class CurrentTrackProviderMock: CurrentTrackProvider {
-
-    var currentTrack: Track?
-
-    init(_ currentTrack: Track? = nil) {
-        self.currentTrack = currentTrack
-    }
-}
-
 final class AlbumRepositoryMock: AlbumRepository {
 
     var fetchResult: Result<[Album], Error> = .success([])
@@ -163,15 +91,6 @@ final class AlbumRepositoryMock: AlbumRepository {
         loadCachedCallCount += 1
 
         return cachedAlbums
-    }
-}
-
-final class AlbumListLoadedSenderMock: AlbumListLoadedSender {
-
-    private(set) var sentAlbumLists: [[Album]] = []
-
-    func send(_ albums: [Album]) {
-        sentAlbumLists.append(albums)
     }
 }
 
@@ -199,4 +118,120 @@ final class ActionDispatcherMock: ActionDispatcher {
     func nextDispatchedAction() async -> Action? {
         await iterator.next()
     }
+}
+
+/// Executes the side effect and returns the actions it has dispatched right away.
+@MainActor
+func dispatchedActions(of sideEffect: SideEffect) -> [Action] {
+    let dispatcher = ActionDispatcherMock()
+
+    sideEffect?.execute(with: dispatcher)
+
+    return dispatcher.dispatchedActions
+}
+
+// MARK: - Waiting for the store
+
+extension Store {
+
+    /// Dispatches the action and waits until the store has reduced it together with every action
+    /// the side effects dispatch in answer to it.
+    ///
+    /// The store reduces the actions on a queue of its own, so nothing has happened yet
+    /// by the time `dispatch` returns.
+    @MainActor
+    func dispatchAndSettle(_ action: Action, sourceLocation: SourceLocation = #_sourceLocation) async {
+        dispatch(action)
+
+        await settled(sourceLocation: sourceLocation)
+    }
+
+    /// Waits until the store has reduced everything that has been dispatched to it,
+    /// so a test may assert that an action has changed nothing.
+    @MainActor
+    func settled(sourceLocation: SourceLocation = #_sourceLocation) async {
+        let recorder = ActionRecorder()
+        let disposer = Disposer()
+
+        // Nothing the store has already reduced can be reported before the observer is subscribed:
+        // the store reports the actions on the main queue, which this test occupies until it awaits.
+        onAction { _, action in recorder.record(action) }.dispose(on: disposer)
+
+        for _ in 0..<50 {
+            recorder.startRoundTrip()
+            dispatch(SettleAction())
+
+            // The queue of the store is serial, so by the time it has reduced the settling action
+            // it has reduced everything dispatched before it.
+            await poll("the store to reduce the settling action", sourceLocation: sourceLocation) {
+                recorder.hasReducedSettleAction
+            }
+
+            // A side effect runs on another queue, so the action it dispatches reaches the store
+            // some time after the action that has caused it has been reduced.
+            try? await Task.sleep(for: quietTimeUntilSettled)
+
+            if recorder.otherActionCount == 0 { return }
+        }
+
+        Issue.record("The store keeps dispatching the actions and never settles.", sourceLocation: sourceLocation)
+    }
+
+    /// Waits until the state of the store satisfies the condition.
+    ///
+    /// This is how a test waits for a side effect that works asynchronously by itself,
+    /// such as the downloading of a track.
+    @MainActor
+    func waitUntil(
+        _ description: String,
+        _ condition: (State) -> Bool,
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) async {
+        await poll(description, sourceLocation: sourceLocation) { condition(state) }
+    }
+}
+
+/// The time a side effect is given to reach the queue of the store with the action it dispatches.
+/// The store that has stayed quiet for that long is considered settled.
+private let quietTimeUntilSettled = Duration.milliseconds(25)
+
+/// An action that changes nothing: it is only dispatched to find out whether the store
+/// has finished the work of the actions dispatched before it.
+private struct SettleAction: Action { }
+
+/// Remembers the actions the store reduces during a round trip of the settling action.
+private final class ActionRecorder {
+
+    private(set) var otherActionCount = 0
+
+    private(set) var hasReducedSettleAction = false
+
+    func record(_ action: Action) {
+        if action is SettleAction {
+            hasReducedSettleAction = true
+        } else {
+            otherActionCount += 1
+        }
+    }
+
+    func startRoundTrip() {
+        otherActionCount = 0
+        hasReducedSettleAction = false
+    }
+}
+
+/// Waits for the condition to hold, giving the queues of the store a chance to run.
+@MainActor
+func poll(
+    _ description: String,
+    sourceLocation: SourceLocation = #_sourceLocation,
+    _ condition: () -> Bool
+) async {
+    for _ in 0..<1000 {
+        if condition() { return }
+
+        try? await Task.sleep(for: .milliseconds(1))
+    }
+
+    Issue.record("Timed out waiting for \(description).", sourceLocation: sourceLocation)
 }

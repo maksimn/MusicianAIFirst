@@ -7,6 +7,14 @@
 
 import Foundation
 
+enum AudioPlayerCondition: Equatable {
+    case initial, loading, loaded, playing, paused, error(WithError)
+}
+
+enum AudioPlayerError: Error {
+    case invalidUrlFor(Track)
+}
+
 /// The state of the audio player: the track being played and everything the player view shows.
 struct AudioPlayerState {
 
