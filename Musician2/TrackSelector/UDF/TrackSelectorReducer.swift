@@ -62,6 +62,6 @@ struct TrackSelectorReducer {
         state.selectedAlbum = album
         state.selectedTrack = track
 
-        return ActionSideEffect(AppAction.nextTrack(TrackData(track: track, autoPlay: autoPlay)))
+        return ActionSideEffect(TrackSelectorAction.nextTrack(TrackData(track: track, autoPlay: autoPlay)))
     }
 }

@@ -61,16 +61,16 @@ Features never read each other's state directly. Instead:
 
 - **Every feature reducer sees every action.** A feature reacts to actions from *other*
   features by switch/casting on their action enum, e.g. `AlbumDetailsReducer` reacts to
-  `AlbumListAction.albumTapped` and `AppAction.nextTrack`; `AudioPlayerReducer` reacts to
-  `AlbumDetailsAction.trackTapped`; `TrackSelectorReducer` reacts to `AlbumListAction`,
-  `AudioPlayerAction`, and `AlbumDetailsAction`.
-- **`App/AppAction.swift`** holds the small vocabulary of actions that genuinely belong to the
-  whole app rather than one feature (currently just `nextTrack(TrackData)`), dispatched via
-  `ActionSideEffect` (`UDF/ActionSideEffect.swift`) when one feature needs to announce something
-  to the others.
+  `AlbumListAction.albumTapped` and `TrackSelectorAction.nextTrack`; `AudioPlayerReducer` reacts
+  to `TrackSelectorAction.nextTrack` and `AlbumDetailsAction.trackTapped`; `TrackSelectorReducer`
+  reacts to `AlbumListAction`, `AudioPlayerAction`, and `AlbumDetailsAction`.
+- **Every action belongs to the feature that announces it** — there is no app-wide action enum.
+  A feature announces something to the others through its own `...Action` enum, dispatched via
+  `ActionSideEffect` (`UDF/ActionSideEffect.swift`); `TrackSelectorAction.nextTrack(TrackData)`
+  is the one action several features listen to.
 - Some "features" are pure logic with no UI at all — **`TrackSelector`** has a reducer/state but
   no view; it just listens to album-loaded/track-tapped/playback-finished actions and decides
-  which track plays next, announcing it via `AppAction.nextTrack`.
+  which track plays next, announcing it via `TrackSelectorAction.nextTrack`.
 
 ### Per-feature file layout
 
@@ -106,7 +106,7 @@ must stay side-effect-free. Side effects report back only by dispatching further
   cache fallback in `Library/Caches`), sorts them newest year first, shows
   loading/error/empty/list states.
 - **AlbumDetails** — shows the tapped album's tracks and highlights the currently playing one;
-  gets its data purely from `AlbumListAction.albumTapped` / `AppAction.nextTrack`, holds no
+  gets its data purely from `AlbumListAction.albumTapped` / `TrackSelectorAction.nextTrack`, holds no
   fetching logic of its own.
 - **AudioPlayer** — downloads a track's audio data, drives `AudioPlayerAPI` (AVFoundation
   wrapper, decorated with `LoggingAudioPlayerAPI`) and `TimerAPI` for progress ticks; its
@@ -120,10 +120,10 @@ must stay side-effect-free. Side effects report back only by dispatching further
 
 - `Musician2/DataClass/` — `Album`, `Track` (plain `Decodable`/`Hashable`/`Identifiable`
   structs matching the JSON schema), plus `TrackData`/`TrackSelection` DTOs used in actions.
-- `Musician2/Networking/Networking.swift` — `NetworkDataLoader` protocol +
-  `URLSessionNetworkDataLoader`, injected into repositories/side effects for testability.
-- `Musician2/Core/` — cross-cutting utilities: `WithError` (type-erased `Equatable` error
-  wrapper, needed because plain `Error` isn't `Equatable` but reducer state/actions need to be),
+- `Musician2/Core/` — cross-cutting utilities: `Networking/Networking.swift`
+  (`NetworkDataLoader` protocol + `URLSessionNetworkDataLoader`, injected into repositories/side
+  effects for testability), `WithError` (type-erased `Equatable` error wrapper, needed because
+  plain `Error` isn't `Equatable` but reducer state/actions need to be),
   `Logger/` (protocol + impl + decorators like `LoggingAudioPlayerAPI`/`LoggingTimerAPI`),
   `isDevelopment()`, `Color.swift` (hex-string ↔ `Color` helpers used for album accent colors).
 - `Musician2/Shared/` — `AlbumRowView` and `Album+Colors` reused between `AlbumList` and
@@ -137,9 +137,9 @@ new actions you don't want spamming the console.
 
 ## Conventions worth preserving
 
-- New cross-feature events go through a feature's own `Action` enum if only one other feature
-  needs to react, or through `AppAction` only when multiple features genuinely need it (see
-  `nextTrack`) — don't default everything to `AppAction`.
+- New cross-feature events go through the `Action` enum of the feature that announces them —
+  the one that owns the decision — even when several features react to it (see
+  `TrackSelectorAction.nextTrack`); don't add an app-wide action enum for them.
 - Reducers must stay pure; put any new IO in a `SideEffectProtocol` struct in that feature's
   `...SideEffects.swift`, not inline in the reducer.
 - Match the existing doc-comment style: a `///` summary sentence on every type/enum case
