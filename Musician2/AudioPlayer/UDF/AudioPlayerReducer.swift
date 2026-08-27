@@ -22,7 +22,7 @@ struct AudioPlayerReducer {
 
     func reduce(_ state: inout AudioPlayerState, _ action: Action) -> SideEffect {
         switch action {
-        case let action as AppAction:
+        case let action as TrackSelectorAction:
             return reduce(&state, action)
 
         case let action as AudioPlayerAction:
@@ -40,9 +40,9 @@ struct AudioPlayerReducer {
         }
     }
 
-    // MARK: - The application actions
+    // MARK: - The track selector actions
 
-    private func reduce(_ state: inout AudioPlayerState, _ action: AppAction) -> SideEffect {
+    private func reduce(_ state: inout AudioPlayerState, _ action: TrackSelectorAction) -> SideEffect {
         switch action {
         case .nextTrack(let trackData):
             return load(trackData, into: &state)

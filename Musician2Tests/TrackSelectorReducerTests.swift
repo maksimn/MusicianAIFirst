@@ -113,7 +113,7 @@ struct TrackSelectorReducerTests {
     // MARK: - Helpers
 
     private func nextTrack(of sideEffect: SideEffect) -> TrackData? {
-        guard case .nextTrack(let trackData)? = dispatchedActions(of: sideEffect).first as? AppAction else {
+        guard case .nextTrack(let trackData)? = dispatchedActions(of: sideEffect).first as? TrackSelectorAction else {
             return nil
         }
 

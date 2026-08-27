@@ -20,7 +20,7 @@ struct AlbumDetailsReducer {
                 state.album = album
             }
 
-        case let action as AppAction:
+        case let action as TrackSelectorAction:
             if case .nextTrack(let trackData) = action {
                 state.currentTrack = trackData.track
             }
