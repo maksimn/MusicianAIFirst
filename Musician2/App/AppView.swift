@@ -14,8 +14,20 @@ struct AppView: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            AlbumListFeature(store: store)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ViewPager(selectedIndex: 1) {
+                ViewPagerPage("КНИГИ") {
+                    FavoritesView()
+                }
+
+                ViewPagerPage("АЛЬБОМЫ") {
+                    AlbumListFeature(store: store)
+                }
+
+                ViewPagerPage("ИЗБРАННОЕ") {
+                    FavoritesView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             AudioPlayerFeature(store: store.scope(\.audioPlayer))
         }
