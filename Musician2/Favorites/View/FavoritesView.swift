@@ -15,6 +15,7 @@ struct FavoritesView: View {
             Text("Избранное")
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.purple)
     }
 }
