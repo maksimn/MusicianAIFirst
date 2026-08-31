@@ -9,8 +9,10 @@ struct TrackSelectorReducerTests {
     private let reducer = TrackSelectorReducer()
 
     private let tracks = [
-        Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01"),
-        Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02")
+        Track(trackId: 1, name: "First", url: "https://example.com/1.mp3", duration: "1:01",
+              isFavorite: false, updatedAt: 0),
+        Track(trackId: 2, name: "Second", url: "https://example.com/2.mp3", duration: "2:02",
+              isFavorite: false, updatedAt: 0)
     ]
 
     // MARK: - The initial track

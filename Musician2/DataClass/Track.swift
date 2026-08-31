@@ -13,11 +13,29 @@ struct Track: Hashable, Decodable, Identifiable {
     let name: String
     let url: String
     let duration: String
+    var isFavorite: Bool
+    var updatedAt: Int /// Time of the latest update of this object as a Unix timestamp
 
     var id: Int { trackId }
 
     enum CodingKeys: String, CodingKey {
-        case trackId, name, url, duration
+        case trackId, name, url, duration, isFavorite, updatedAt
+    }
+}
+
+extension Track {
+
+    /// Declared in an extension so that the memberwise initializer stays synthesized: the locally owned
+    /// properties are absent from the remote JSON and fall back to "not a favorite, never updated".
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        trackId = try container.decode(Int.self, forKey: .trackId)
+        name = try container.decode(String.self, forKey: .name)
+        url = try container.decode(String.self, forKey: .url)
+        duration = try container.decode(String.self, forKey: .duration)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        updatedAt = try container.decodeIfPresent(Int.self, forKey: .updatedAt) ?? 0
     }
 }
 
