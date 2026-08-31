@@ -33,7 +33,7 @@ final class AppBuilder {
             albumListReducer: AlbumListReducer(
                 repository: AlbumRepositoryImpl(
                     dataLoader: URLSessionNetworkDataLoader(),
-                    cacheService: FileCacheService()
+                    cacheService: SwiftDataAlbumCacheService()
                 )
             ),
             albumDetailsReducer: AlbumDetailsReducer(),
