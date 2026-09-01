@@ -26,7 +26,7 @@ struct TrackSelectorReducer {
 
             return selectNextTrack(into: &state)
 
-        case let action as AlbumDetailsAction:
+        case let action as AlbumTracklistAction:
             if case .trackTapped(let track, let album) = action {
                 return select(track, of: album, autoPlay: true, into: &state)
             }

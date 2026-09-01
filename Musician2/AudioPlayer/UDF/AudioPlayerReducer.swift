@@ -28,7 +28,7 @@ struct AudioPlayerReducer {
         case let action as AudioPlayerAction:
             return reduce(&state, action)
 
-        case let action as AlbumDetailsAction:
+        case let action as AlbumTracklistAction:
             if case .trackTapped(let track, _) = action {
                 return apply(track, to: &state)
             }

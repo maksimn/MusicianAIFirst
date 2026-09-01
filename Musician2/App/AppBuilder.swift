@@ -36,7 +36,7 @@ final class AppBuilder {
                     cacheService: SwiftDataAlbumCacheService()
                 )
             ),
-            albumDetailsReducer: AlbumDetailsReducer(),
+            albumTracklistReducer: AlbumTracklistReducer(),
             audioPlayerReducer: AudioPlayerReducer(
                 dataLoader: URLSessionNetworkDataLoader(),
                 audioPlayerAPI: audioPlayerAPI,

@@ -11,7 +11,7 @@ struct AppState {
 
     var albumList = AlbumListState()
 
-    var albumDetails = AlbumDetailsState()
+    var albumTracklist = AlbumTracklistState()
 
     var audioPlayer = AudioPlayerState()
 

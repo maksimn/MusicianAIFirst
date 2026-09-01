@@ -94,7 +94,7 @@ struct TrackSelectorReducerTests {
     @Test func theTrackPickedByTheUserIsSelectedAndPlaysAutomatically() throws {
         var state = makeSelectedState(track: tracks[0])
 
-        let sideEffect = reducer.reduce(&state, AlbumDetailsAction.trackTapped(tracks[1], makeAlbum()))
+        let sideEffect = reducer.reduce(&state, AlbumTracklistAction.trackTapped(tracks[1], makeAlbum()))
 
         #expect(state.selectedTrack == tracks[1])
 
@@ -106,7 +106,7 @@ struct TrackSelectorReducerTests {
     @Test func theSameTrackOfAnotherAlbumIsSelectedAgain() {
         var state = makeSelectedState(track: tracks[0])
 
-        let sideEffect = reducer.reduce(&state, AlbumDetailsAction.trackTapped(tracks[0], makeAlbum(id: 2)))
+        let sideEffect = reducer.reduce(&state, AlbumTracklistAction.trackTapped(tracks[0], makeAlbum(id: 2)))
 
         #expect(state.selectedAlbum == makeAlbum(id: 2))
         #expect(sideEffect != nil)
