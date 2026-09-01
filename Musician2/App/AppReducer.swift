@@ -14,17 +14,17 @@ import UDF
 struct AppReducer {
 
     let albumListReducer: AlbumListReducer
-    let albumDetailsReducer: AlbumDetailsReducer
+    let albumTracklistReducer: AlbumTracklistReducer
     let audioPlayerReducer: AudioPlayerReducer
     let trackSelectorReducer: TrackSelectorReducer
 
     func reduce(_ state: inout AppState, _ action: Action) -> SideEffect {
         let albumListSideEffect = albumListReducer.reduce(&state.albumList, action)
-        let albumDetailsSideEffect = albumDetailsReducer.reduce(&state.albumDetails, action)
+        let albumTracklistSideEffect = albumTracklistReducer.reduce(&state.albumTracklist, action)
         let audioPlayerSideEffect = audioPlayerReducer.reduce(&state.audioPlayer, action)
         let trackSelectorSideEffect = trackSelectorReducer.reduce(&state.trackSelector, action)
 
-        let sideEffects = [albumListSideEffect, albumDetailsSideEffect, audioPlayerSideEffect, trackSelectorSideEffect]
+        let sideEffects = [albumListSideEffect, albumTracklistSideEffect, audioPlayerSideEffect, trackSelectorSideEffect]
 
         guard sideEffects.count > 1 else { return sideEffects.first ?? nil }
 
