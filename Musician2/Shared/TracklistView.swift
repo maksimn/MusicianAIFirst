@@ -47,7 +47,7 @@ struct TracklistView: View {
             Text(track.name)
                 .font(.system(size: isSelected ? 19 : 16, weight: isSelected ? .bold : .regular))
                 .foregroundColor(textColor)
-                .padding(.leading, 48)
+                .padding(.leading, 44)
 
             Spacer(minLength: 16)
         }
