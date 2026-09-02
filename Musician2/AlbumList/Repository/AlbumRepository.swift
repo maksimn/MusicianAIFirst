@@ -12,6 +12,9 @@ protocol AlbumRepository {
     func fetchAlbums() async throws -> [Album]
 
     func loadCachedAlbums() -> [Album]
+
+    /// Stores the data of a track the device owns — its favorite flag — changed by the user.
+    func saveTrack(_ track: Track) throws
 }
 
 final class AlbumRepositoryImpl: AlbumRepository {
@@ -38,5 +41,9 @@ final class AlbumRepositoryImpl: AlbumRepository {
 
     func loadCachedAlbums() -> [Album] {
         (try? cacheService.loadAlbums()) ?? []
+    }
+
+    func saveTrack(_ track: Track) throws {
+        try cacheService.saveTrack(track)
     }
 }

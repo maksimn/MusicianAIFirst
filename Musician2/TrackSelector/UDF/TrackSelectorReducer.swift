@@ -28,6 +28,10 @@ struct TrackSelectorReducer {
 
         case let action as AlbumTracklistAction:
             if case .trackTapped(let track, let album) = action {
+                if state.selectedAlbum == album && state.selectedTrack == track {
+                    return nil
+                }
+
                 return select(track, of: album, autoPlay: true, into: &state)
             }
 
@@ -58,7 +62,7 @@ struct TrackSelectorReducer {
     }
 
     private func select(_ track: Track, of album: Album, autoPlay: Bool,
-                        into state: inout TrackSelectorState) -> SideEffectProtocol {
+                        into state: inout TrackSelectorState) -> SideEffect {
         state.selectedAlbum = album
         state.selectedTrack = track
 

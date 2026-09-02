@@ -53,6 +53,13 @@ final class TrackDAO {
         duration = track.duration
     }
 
+    /// The counterpart of `update(with:)`: it writes back exactly the two fields that method leaves
+    /// alone, because they are changed on this device by the user and never by the feed.
+    func updateDeviceOwnedData(with track: Track) {
+        isFavorite = track.isFavorite
+        updatedAt = track.updatedAt
+    }
+
     func toTrack() -> Track {
         Track(
             trackId: trackId,

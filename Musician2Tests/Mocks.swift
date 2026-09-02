@@ -78,8 +78,11 @@ final class AlbumRepositoryMock: AlbumRepository {
 
     var cachedAlbums: [Album] = []
 
+    var saveTrackError: Error?
+
     private(set) var fetchCallCount = 0
     private(set) var loadCachedCallCount = 0
+    private(set) var savedTracks: [Track] = []
 
     func fetchAlbums() async throws -> [Album] {
         fetchCallCount += 1
@@ -91,6 +94,14 @@ final class AlbumRepositoryMock: AlbumRepository {
         loadCachedCallCount += 1
 
         return cachedAlbums
+    }
+
+    func saveTrack(_ track: Track) throws {
+        savedTracks.append(track)
+
+        if let saveTrackError {
+            throw saveTrackError
+        }
     }
 }
 

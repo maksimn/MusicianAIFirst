@@ -28,3 +28,27 @@ extension Album: CustomStringConvertible {
         return "Album(id: \(id), name: \(albumName)), year: \(albumYear))"
     }
 }
+
+extension Album {
+
+    /// Returns the album whose track has been replaced by its changed version.
+    ///
+    /// The tracks of an album are immutable value copies of the stored ones, so a change of a single
+    /// track — the user marking it as a favorite one — has to be carried into the album holding it.
+    func replacing(_ track: Track) -> Album {
+        guard let index = tracks.firstIndex(where: { $0.trackId == track.trackId }) else { return self }
+
+        var tracks = tracks
+
+        tracks[index] = track
+
+        return Album(
+            albumId: albumId,
+            albumName: albumName,
+            albumYear: albumYear,
+            albumCover: albumCover,
+            albumMedianColor: albumMedianColor,
+            tracks: tracks
+        )
+    }
+}

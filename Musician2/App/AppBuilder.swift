@@ -29,14 +29,19 @@ final class AppBuilder {
             logger: audioPlayerLogger
         )
 
+        // The album list and the tracklist share the repository: they work with the same albums,
+        // one reading them from the feed and the other writing the favorite flags back.
+        let albumRepository = AlbumRepositoryImpl(
+            dataLoader: URLSessionNetworkDataLoader(),
+            cacheService: SwiftDataAlbumCacheService()
+        )
+
         let reducer = AppReducer(
-            albumListReducer: AlbumListReducer(
-                repository: AlbumRepositoryImpl(
-                    dataLoader: URLSessionNetworkDataLoader(),
-                    cacheService: SwiftDataAlbumCacheService()
-                )
+            albumListReducer: AlbumListReducer(repository: albumRepository),
+            albumTracklistReducer: AlbumTracklistReducer(
+                repository: albumRepository,
+                logger: LoggerImpl(category: "AlbumTracklist")
             ),
-            albumTracklistReducer: AlbumTracklistReducer(),
             audioPlayerReducer: AudioPlayerReducer(
                 dataLoader: URLSessionNetworkDataLoader(),
                 audioPlayerAPI: audioPlayerAPI,
