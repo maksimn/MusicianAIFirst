@@ -17,7 +17,19 @@ protocol AlbumCacheService {
 
     func saveAlbums(_ albums: [Album]) throws
 
+    /// Writes back the device-owned data of a single track — the favorite flag the user has just
+    /// changed — leaving the rest of the stored album alone.
+    func saveTrack(_ track: Track) throws
+
     func loadAlbums() throws -> [Album]
+}
+
+/// The failures of the album storage that are its own rather than the database's.
+enum AlbumCacheError: Error {
+
+    /// A track missing from the store has been changed: it can only happen if the album the track
+    /// belongs to has disappeared from the feed while its tracklist was on the screen.
+    case trackNotFound(trackId: Int)
 }
 
 /// Stores the albums in a SwiftData database.
@@ -68,6 +80,24 @@ final class SwiftDataAlbumCacheService: AlbumCacheService {
         for removedAlbum in storedAlbums.values {
             context.delete(removedAlbum)
         }
+
+        try context.save()
+    }
+
+    /// Unlike the albums of the feed, the track is looked up on its own and not through its album:
+    /// nothing but the data the device owns changes here, so there is nothing to merge.
+    func saveTrack(_ track: Track) throws {
+        let context = ModelContext(try modelContainer())
+        let trackId = track.trackId
+        var descriptor = FetchDescriptor<TrackDAO>(predicate: #Predicate { $0.trackId == trackId })
+
+        descriptor.fetchLimit = 1
+
+        guard let storedTrack = try context.fetch(descriptor).first else {
+            throw AlbumCacheError.trackNotFound(trackId: trackId)
+        }
+
+        storedTrack.updateDeviceOwnedData(with: track)
 
         try context.save()
     }

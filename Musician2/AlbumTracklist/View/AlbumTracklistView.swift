@@ -10,7 +10,8 @@ import SwiftUI
 /// The tracklist of the shown album, connected to the store.
 ///
 /// It is the seam between the store-agnostic `TracklistView` and the feature: it feeds the list
-/// with the album's tracks and the currently played one, and turns a tap on a track into an action.
+/// with the album's tracks and the currently played one, and turns a tap on a track or a swipe
+/// over it into an action.
 struct AlbumTracklistView: View {
 
     let store: ObservableStore<AlbumTracklistState>
@@ -23,6 +24,8 @@ struct AlbumTracklistView: View {
                 textColor: album.textColor
             ) { track in
                 store.dispatch(AlbumTracklistAction.trackTapped(track, album))
+            } onToggleIsFavorite: { track in
+                store.dispatch(AlbumTracklistAction.toggleIsFavorite(track))
             }
         }
     }

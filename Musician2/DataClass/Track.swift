@@ -13,13 +13,25 @@ struct Track: Hashable, Decodable, Identifiable {
     let name: String
     let url: String
     let duration: String
-    var isFavorite: Bool
+
+    var isFavorite: Bool {
+        didSet {
+            setUpdatedAtProp()
+        }
+    }
+
     var updatedAt: Int /// Time of the latest update of this object as a Unix timestamp
 
     var id: Int { trackId }
 
     enum CodingKeys: String, CodingKey {
         case trackId, name, url, duration, isFavorite, updatedAt
+    }
+
+    static var updatedAtGetter: () -> Int = { Int(Date().timeIntervalSince1970) }
+
+    private mutating func setUpdatedAtProp() {
+        updatedAt = Self.updatedAtGetter()
     }
 }
 
