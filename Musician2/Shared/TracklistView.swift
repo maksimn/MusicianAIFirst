@@ -48,8 +48,7 @@ struct TracklistView: View {
                 .font(.system(size: isSelected ? 19 : 16, weight: isSelected ? .bold : .regular))
                 .foregroundColor(textColor)
                 .padding(.leading, 44)
-
-            Spacer(minLength: 16)
+                .padding(.trailing, 16)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 11)
