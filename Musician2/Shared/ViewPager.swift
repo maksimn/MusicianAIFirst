@@ -35,11 +35,12 @@ enum ViewPagerBuilder {
 }
 
 /// A container view behaving like the Android `ViewPager`: a tab bar pinned at the top and
-/// horizontally swipeable pages below it, with the tab bar and the pages kept in sync —
-/// tapping a tab scrolls to its page, swiping to a page selects its tab.
+/// the selected page below it. The tab bar is the only way to change pages — gestures on the
+/// page body are left entirely to the page's own content, so scrolling a list never switches
+/// tabs by accident.
 ///
-/// It is built on a page-styled `TabView`, whose own page indicator is hidden because the
-/// tab bar plays that role here.
+/// All pages stay in the hierarchy and only the selected one is shown, so that each page keeps
+/// its state (scroll position, loaded data) while another tab is selected.
 struct ViewPager: View {
 
     private let pages: [ViewPagerPage]
@@ -59,13 +60,17 @@ struct ViewPager: View {
         VStack(spacing: 0) {
             tabBar
 
-            TabView(selection: $selectedIndex) {
+            ZStack {
                 ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+                    let isSelected = index == selectedIndex
+
                     page.content
-                        .tag(index)
+                        .opacity(isSelected ? 1 : 0)
+                        .allowsHitTesting(isSelected)
+                        .accessibilityHidden(!isSelected)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -81,8 +86,6 @@ struct ViewPager: View {
                 .fill(Color(.separator))
                 .frame(height: 0.5)
         }
-        // Keeps the indicator sliding when the selection is changed by a page swipe
-        // rather than by a tab tap.
         .animation(.easeInOut(duration: 0.25), value: selectedIndex)
     }
 
