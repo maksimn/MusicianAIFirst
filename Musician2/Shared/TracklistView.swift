@@ -44,17 +44,11 @@ struct TracklistView: View {
         let isSelected = track.id == currentTrack?.id
 
         HStack(alignment: .center, spacing: 0) {
-            Text(isSelected ? "●" : "")
-                .font(.system(size: 12))
-                .foregroundColor(textColor)
-                .frame(width: 24, alignment: .leading)
-                .padding(.leading, 24)
-
             Text(track.name)
                 .font(.system(size: isSelected ? 19 : 16, weight: isSelected ? .bold : .regular))
                 .foregroundColor(textColor)
-
-            Spacer(minLength: 16)
+                .padding(.leading, 44)
+                .padding(.trailing, 16)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 11)
