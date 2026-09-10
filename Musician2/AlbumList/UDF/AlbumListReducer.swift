@@ -13,11 +13,8 @@ import UDF
 /// notifying the other features — is left to the returned side effects.
 struct AlbumListReducer {
 
-    private let repository: AlbumRepository
-
-    init(repository: AlbumRepository) {
-        self.repository = repository
-    }
+    let dataLoader: NetworkDataLoader
+    let cacheService: AlbumCacheService
 
     func reduce(_ state: inout AlbumListState, _ action: Action) -> SideEffect {
         guard let action = action as? AlbumListAction else { return nil }
@@ -29,7 +26,7 @@ struct AlbumListReducer {
             state.isLoading = true
             state.error = nil
 
-            return LoadAlbumsSideEffect(repository: repository)
+            return LoadAlbumsSideEffect(dataLoader: dataLoader, cacheService: cacheService)
 
         case .albumsLoaded(let albums):
             state.isLoading = false
@@ -42,7 +39,7 @@ struct AlbumListReducer {
             state.error = error
 
             // If network fails, keep showing cached albums.
-            return state.albums.isEmpty ? LoadCachedAlbumsSideEffect(repository: repository) : nil
+            return state.albums.isEmpty ? LoadCachedAlbumsSideEffect(cacheService: cacheService) : nil
 
         default:
             return nil

@@ -17,4 +17,8 @@ enum AlbumTracklistAction: Action {
     /// The user has marked a track of the listed album as a favorite one or has taken the mark off:
     /// the flag is owned by the device, so the feature writes it to the storage itself.
     case toggleIsFavorite(Track)
+
+    /// The tapped album has been read from the storage: unlike the copy the album list holds, it carries
+    /// the favorite flags the user has changed since the list was loaded.
+    case albumLoaded(Album)
 }

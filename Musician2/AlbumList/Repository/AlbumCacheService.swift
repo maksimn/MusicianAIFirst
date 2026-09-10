@@ -22,6 +22,10 @@ protocol AlbumCacheService {
     func saveTrack(_ track: Track) throws
 
     func loadAlbums() throws -> [Album]
+
+    /// Reads a single stored album, with the device-owned data of its tracks as it is right now: the
+    /// storage is the only place where the favorite flags changed since the list was loaded are up to date.
+    func loadAlbum(albumId: Int) throws -> Album
 }
 
 /// The failures of the album storage that are its own rather than the database's.
@@ -30,6 +34,10 @@ enum AlbumCacheError: Error {
     /// A track missing from the store has been changed: it can only happen if the album the track
     /// belongs to has disappeared from the feed while its tracklist was on the screen.
     case trackNotFound(trackId: Int)
+
+    /// An album missing from the store has been asked for: it can only happen if the album has
+    /// disappeared from the feed, or never got into the store, after it was shown in the list.
+    case albumNotFound(albumId: Int)
 }
 
 /// Stores the albums in a SwiftData database.
@@ -106,6 +114,19 @@ final class SwiftDataAlbumCacheService: AlbumCacheService {
         let context = ModelContext(try modelContainer())
 
         return try context.fetch(FetchDescriptor<AlbumDAO>()).map { $0.toAlbum() }
+    }
+
+    func loadAlbum(albumId: Int) throws -> Album {
+        let context = ModelContext(try modelContainer())
+        var descriptor = FetchDescriptor<AlbumDAO>(predicate: #Predicate { $0.albumId == albumId })
+
+        descriptor.fetchLimit = 1
+
+        guard let storedAlbum = try context.fetch(descriptor).first else {
+            throw AlbumCacheError.albumNotFound(albumId: albumId)
+        }
+
+        return storedAlbum.toAlbum()
     }
 
     // MARK: - Helpers

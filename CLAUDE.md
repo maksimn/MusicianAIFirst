@@ -27,7 +27,7 @@ xcodebuild -project Musician2.xcodeproj -scheme Musician2 -destination 'platform
 
 Tests use the **Swift Testing** framework (`import Testing`, `@Test`, `#expect`), not XCTest.
 Reducer tests are `@MainActor struct`s; shared mocks live in `Musician2Tests/Mocks.swift`
-(`AlbumRepositoryMock`, `NetworkDataLoaderMock`, `AudioPlayerAPIMock`, `TimerAPIMock`,
+(`AlbumCacheServiceMock`, `NetworkDataLoaderMock`, `AudioPlayerAPIMock`, `TimerAPIMock`,
 `ActionDispatcherMock`). `ActionDispatcherMock.nextDispatchedAction()` lets async side effects be
 awaited deterministically instead of polled/slept.
 
@@ -102,8 +102,9 @@ must stay side-effect-free. Side effects report back only by dispatching further
 
 ### Feature responsibilities
 
-- **AlbumList** — fetches albums via `AlbumRepository` (network + `FileCacheService` disk
-  cache fallback in `Library/Caches`), sorts them newest year first, shows
+- **AlbumList** — fetches albums with a `NetworkDataLoader` and keeps them in the
+  `AlbumCacheService` SwiftData store (the fallback when the network fails; there is no
+  repository layer — side effects use both directly), sorts them newest year first, shows
   loading/error/empty/list states.
 - **AlbumDetails** — shows the tapped album's tracks and highlights the currently playing one;
   gets its data purely from `AlbumListAction.albumTapped` / `TrackSelectorAction.nextTrack`, holds no
@@ -121,7 +122,7 @@ must stay side-effect-free. Side effects report back only by dispatching further
 - `Musician2/DataClass/` — `Album`, `Track` (plain `Decodable`/`Hashable`/`Identifiable`
   structs matching the JSON schema), plus `TrackData`/`TrackSelection` DTOs used in actions.
 - `Musician2/Core/` — cross-cutting utilities: `Networking/Networking.swift`
-  (`NetworkDataLoader` protocol + `URLSessionNetworkDataLoader`, injected into repositories/side
+  (`NetworkDataLoader` protocol + `URLSessionNetworkDataLoader`, injected into side
   effects for testability), `WithError` (type-erased `Equatable` error wrapper, needed because
   plain `Error` isn't `Equatable` but reducer state/actions need to be),
   `Logger/` (protocol + impl + decorators like `LoggingAudioPlayerAPI`/`LoggingTimerAPI`),
