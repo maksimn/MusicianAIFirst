@@ -72,39 +72,6 @@ final class TimerAPIMock: TimerAPI {
     }
 }
 
-final class AlbumRepositoryMock: AlbumRepository {
-
-    var fetchResult: Result<[Album], Error> = .success([])
-
-    var cachedAlbums: [Album] = []
-
-    var saveTrackError: Error?
-
-    private(set) var fetchCallCount = 0
-    private(set) var loadCachedCallCount = 0
-    private(set) var savedTracks: [Track] = []
-
-    func fetchAlbums() async throws -> [Album] {
-        fetchCallCount += 1
-
-        return try fetchResult.get()
-    }
-
-    func loadCachedAlbums() -> [Album] {
-        loadCachedCallCount += 1
-
-        return cachedAlbums
-    }
-
-    func saveTrack(_ track: Track) throws {
-        savedTracks.append(track)
-
-        if let saveTrackError {
-            throw saveTrackError
-        }
-    }
-}
-
 final class ActionDispatcherMock: ActionDispatcher {
 
     private(set) var dispatchedActions: [Action] = []

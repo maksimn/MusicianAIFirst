@@ -18,6 +18,7 @@ enum AlbumListAction: Action {
     /// The fetching of the albums has failed.
     case loadingFailed(Error)
 
-    /// The user has tapped an album of the list: the album details feature reacts to it.
+    /// The user has tapped an album of the list: the album tracklist feature reacts to it by reading
+    /// the album from the storage.
     case albumTapped(Album)
 }

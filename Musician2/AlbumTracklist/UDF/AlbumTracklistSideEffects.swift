@@ -8,6 +8,27 @@
 import Foundation
 import UDF
 
+/// Reads the tapped album from the storage, which the favorite flags are written to.
+///
+/// A failed reading dispatches nothing: the tracklist keeps showing the album as it was tapped, which
+/// differs from the stored one in nothing but the favorite flags changed since the list was loaded.
+struct LoadAlbumSideEffect: SideEffectProtocol {
+
+    let albumId: Int
+
+    let cacheService: AlbumCacheService
+
+    let logger: Logger
+
+    func execute(with dispatcher: ActionDispatcher) {
+        do {
+            dispatcher.dispatch(AlbumTracklistAction.albumLoaded(try cacheService.loadAlbum(albumId: albumId)))
+        } catch {
+            logger.errorWithContext(error)
+        }
+    }
+}
+
 /// Writes the changed favorite flag of a track to the storage, which owns it between the launches.
 ///
 /// Nothing is dispatched back: the state already shows the track as the user has just marked it,
@@ -16,7 +37,7 @@ struct SaveTrackSideEffect: SideEffectProtocol {
 
     let track: Track
 
-    let repository: AlbumRepository
+    let cacheService: AlbumCacheService
 
     let logger: Logger
 
@@ -24,7 +45,7 @@ struct SaveTrackSideEffect: SideEffectProtocol {
     /// an effect: the reducer stays a function of nothing but the state and the action.
     func execute(with dispatcher: ActionDispatcher) {
         do {
-            try repository.saveTrack(track)
+            try cacheService.saveTrack(track)
         } catch {
             logger.errorWithContext(error)
         }

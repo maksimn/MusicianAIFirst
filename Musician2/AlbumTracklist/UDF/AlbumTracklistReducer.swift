@@ -11,16 +11,16 @@ import UDF
 ///
 /// The feature owns the whole logic of working with the tracks of a shown album: which album's
 /// tracks are listed, which of them is the one being played and which of them are the favorite ones.
-/// The first two are announced by the other features, so the reducer only listens and never fetches
-/// anything itself; the favorite flag is the feature's own and is stored through the repository.
+/// The first two are announced by the other features; the favorite flag is the feature's own and lives
+/// in the storage, so the listed album is read from there rather than taken from the announcement.
 struct AlbumTracklistReducer {
 
-    private let repository: AlbumRepository
+    private let cacheService: AlbumCacheService
 
     private let logger: Logger
 
-    init(repository: AlbumRepository, logger: Logger) {
-        self.repository = repository
+    init(cacheService: AlbumCacheService, logger: Logger) {
+        self.cacheService = cacheService
         self.logger = logger
     }
 
@@ -28,7 +28,7 @@ struct AlbumTracklistReducer {
         switch action {
         case let action as AlbumListAction:
             if case .albumTapped(let album) = action {
-                state.album = album
+                return showAlbum(album, in: &state)
             }
 
         case let action as TrackSelectorAction:
@@ -37,8 +37,17 @@ struct AlbumTracklistReducer {
             }
 
         case let action as AlbumTracklistAction:
-            if case .toggleIsFavorite(let track) = action {
+            switch action {
+            case .toggleIsFavorite(let track):
                 return toggleIsFavorite(of: track, in: &state)
+
+            case .albumLoaded(let album):
+                if album.albumId == state.album?.albumId {
+                    state.album = album
+                }
+
+            case .trackTapped:
+                break
             }
 
         default:
@@ -46,6 +55,18 @@ struct AlbumTracklistReducer {
         }
 
         return nil
+    }
+
+    /// Shows the tapped album at once and has its stored version read by its id.
+    ///
+    /// The album list keeps the albums as they were loaded, so the tapped album may miss the favorite
+    /// flags changed since then — the tracklist would show the ones of a previous visit. The tapped
+    /// copy only fills the screen being pushed until the stored album arrives; an album that arrives
+    /// after another one has been tapped is dropped by its id when it is loaded.
+    private func showAlbum(_ album: Album, in state: inout AlbumTracklistState) -> SideEffect {
+        state.album = album
+
+        return LoadAlbumSideEffect(albumId: album.albumId, cacheService: cacheService, logger: logger)
     }
 
     /// Marks the track as a favorite one — or takes the mark off — in every copy of it the feature
@@ -64,6 +85,6 @@ struct AlbumTracklistReducer {
             state.currentTrack = toggledTrack
         }
 
-        return SaveTrackSideEffect(track: toggledTrack, repository: repository, logger: logger)
+        return SaveTrackSideEffect(track: toggledTrack, cacheService: cacheService, logger: logger)
     }
 }
