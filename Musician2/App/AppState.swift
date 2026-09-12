@@ -15,5 +15,7 @@ struct AppState {
 
     var audioPlayer = AudioPlayerState()
 
+    var favorites = FavoritesState()
+
     var trackSelector = TrackSelectorState()
 }
