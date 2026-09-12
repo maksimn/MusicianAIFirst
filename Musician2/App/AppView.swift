@@ -16,7 +16,8 @@ struct AppView: View {
         VStack(spacing: 2) {
             ViewPager(selectedIndex: 1) {
                 ViewPagerPage("КНИГИ") {
-                    FavoritesView()
+                    // The books feature is not there yet: the tab only keeps the place it will take.
+                    Color(.systemBackground)
                 }
 
                 ViewPagerPage("АЛЬБОМЫ") {
@@ -24,7 +25,7 @@ struct AppView: View {
                 }
 
                 ViewPagerPage("ИЗБРАННОЕ") {
-                    FavoritesView()
+                    FavoritesView(store: ObservableStore(store.scope(\.favorites)))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

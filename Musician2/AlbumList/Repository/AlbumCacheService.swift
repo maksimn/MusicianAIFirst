@@ -26,6 +26,11 @@ protocol AlbumCacheService {
     /// Reads a single stored album, with the device-owned data of its tracks as it is right now: the
     /// storage is the only place where the favorite flags changed since the list was loaded are up to date.
     func loadAlbum(albumId: Int) throws -> Album
+
+    /// Reads the tracks marked as favorite ones out of every stored album at once, the one marked
+    /// last coming first: the favorites belong to no single album, and the storage is the only place
+    /// holding the flags of all the albums together.
+    func loadFavoriteTracks() throws -> [Track]
 }
 
 /// The failures of the album storage that are its own rather than the database's.
@@ -127,6 +132,19 @@ final class SwiftDataAlbumCacheService: AlbumCacheService {
         }
 
         return storedAlbum.toAlbum()
+    }
+
+    /// The tracks are fetched on their own and not through their albums, because the favorites are a
+    /// list of tracks and not of albums; they are ordered by the moment the flag was last changed,
+    /// which is exactly what `updatedAt` is stored for.
+    func loadFavoriteTracks() throws -> [Track] {
+        let context = ModelContext(try modelContainer())
+        let descriptor = FetchDescriptor<TrackDAO>(
+            predicate: #Predicate { $0.isFavorite },
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+
+        return try context.fetch(descriptor).map { $0.toTrack() }
     }
 
     // MARK: - Helpers

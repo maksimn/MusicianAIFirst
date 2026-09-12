@@ -29,8 +29,8 @@ final class AppBuilder {
             logger: audioPlayerLogger
         )
 
-        // The album list and the tracklist share the storage: they work with the same albums,
-        // one saving them from the feed and the other writing the favorite flags back.
+        // The album list, the tracklist and the favorites share the storage: they work with the same
+        // albums — one saves them from the feed, the other two read and write the favorite flags.
         let albumCacheService = SwiftDataAlbumCacheService()
 
         let reducer = AppReducer(
@@ -46,6 +46,10 @@ final class AppBuilder {
                 dataLoader: URLSessionNetworkDataLoader(),
                 audioPlayerAPI: audioPlayerAPI,
                 timerAPI: LoggingTimerAPI(decorated: TimerAPIImpl(), logger: audioPlayerLogger)
+            ),
+            favoritesReducer: FavoritesReducer(
+                cacheService: albumCacheService,
+                logger: LoggerImpl(category: "Favorites")
             ),
             trackSelectorReducer: TrackSelectorReducer()
         )

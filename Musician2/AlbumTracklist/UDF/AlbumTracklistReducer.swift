@@ -36,6 +36,11 @@ struct AlbumTracklistReducer {
                 state.currentTrack = trackData.track
             }
 
+        case let action as FavoritesAction:
+            if case .removeFromFavorites(let track) = action {
+                takeFavoriteMarkOff(of: track, in: &state)
+            }
+
         case let action as AlbumTracklistAction:
             switch action {
             case .toggleIsFavorite(let track):
@@ -69,22 +74,39 @@ struct AlbumTracklistReducer {
         return LoadAlbumSideEffect(albumId: album.albumId, cacheService: cacheService, logger: logger)
     }
 
-    /// Marks the track as a favorite one — or takes the mark off — in every copy of it the feature
-    /// keeps, and has the change written to the storage the flag outlives the launch in.
-    ///
-    /// The album of the state holds value copies of its tracks, so the tapped track is replaced in it
-    /// as well; otherwise the list would keep showing the flag the track had before the tap.
+    /// Marks the track as a favorite one — or takes the mark off — and has the change written to the
+    /// storage the flag outlives the launch in.
     private func toggleIsFavorite(of track: Track, in state: inout AlbumTracklistState) -> SideEffect {
         var toggledTrack = track
 
         toggledTrack.isFavorite.toggle()
 
-        state.album = state.album?.replacing(toggledTrack)
-
-        if state.currentTrack?.trackId == toggledTrack.trackId {
-            state.currentTrack = toggledTrack
-        }
+        apply(toggledTrack, in: &state)
 
         return SaveTrackSideEffect(track: toggledTrack, cacheService: cacheService, logger: logger)
+    }
+
+    /// Takes the favorite mark off a track the user has removed from the favorites screen, which may
+    /// well be a track of the listed album: otherwise the tracklist, left on the screen while the
+    /// removal happened on another tab, would keep showing the track as a favorite one. Nothing is
+    /// written to the storage here — the favorites feature writes the mark it has taken off itself.
+    private func takeFavoriteMarkOff(of track: Track, in state: inout AlbumTracklistState) {
+        var unmarkedTrack = track
+
+        unmarkedTrack.isFavorite = false
+
+        apply(unmarkedTrack, in: &state)
+    }
+
+    /// Carries a changed track into every copy of it the feature keeps.
+    ///
+    /// The album of the state holds value copies of its tracks, so the changed track is replaced in it
+    /// as well; otherwise the list would keep showing the flag the track had before the change.
+    private func apply(_ track: Track, in state: inout AlbumTracklistState) {
+        state.album = state.album?.replacing(track)
+
+        if state.currentTrack?.trackId == track.trackId {
+            state.currentTrack = track
+        }
     }
 }
