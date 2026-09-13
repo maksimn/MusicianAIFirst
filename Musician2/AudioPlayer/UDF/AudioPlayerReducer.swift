@@ -35,6 +35,13 @@ struct AudioPlayerReducer {
 
             return nil
 
+        case let action as FavoritesAction:
+            if case .trackTapped(let track, _) = action {
+                return apply(track, to: &state)
+            }
+
+            return nil
+
         default:
             return nil
         }

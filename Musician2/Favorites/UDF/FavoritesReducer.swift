@@ -37,6 +37,9 @@ struct FavoritesReducer {
 
             case .removeFromFavorites(let track):
                 return removeFromFavorites(track, in: &state)
+
+            case .trackTapped:
+                break
             }
 
         case let action as AlbumTracklistAction:

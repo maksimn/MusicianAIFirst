@@ -20,4 +20,10 @@ enum FavoritesAction: Action {
     /// The user has taken the favorite mark off a track of the list: the tracklist of an album reacts
     /// to it, because it may be showing that very track as a favorite one.
     case removeFromFavorites(Track)
+
+    /// The user has tapped a track of the list: the track selector and the audio player react to it,
+    /// because picking a track overrides whatever was queued next. The whole list travels with the
+    /// track, because the playback goes on through it — the favorite tracks belong to no single album
+    /// the next track could be taken from.
+    case trackTapped(Track, [Track])
 }
