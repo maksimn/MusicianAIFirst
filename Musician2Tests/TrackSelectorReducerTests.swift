@@ -23,7 +23,7 @@ struct TrackSelectorReducerTests {
         let sideEffect = reducer.reduce(&state, AlbumListAction.albumsLoaded([makeAlbum(), makeAlbum(id: 2)]))
 
         #expect(state.selectedTrack == tracks[0])
-        #expect(state.selectedAlbum == makeAlbum(id: 2))
+        #expect(state.queue == .album(makeAlbum(id: 2)))
 
         let trackData = try #require(nextTrack(of: sideEffect))
 
@@ -80,7 +80,7 @@ struct TrackSelectorReducerTests {
 
     @Test func aSelectedTrackThatIsNotFoundInItsAlbumIsIgnored() {
         var state = TrackSelectorState(
-            selectedAlbum: makeAlbum(tracks: [tracks[0]]),
+            queue: .album(makeAlbum(tracks: [tracks[0]])),
             selectedTrack: tracks[1]
         )
 
@@ -108,7 +108,7 @@ struct TrackSelectorReducerTests {
 
         let sideEffect = reducer.reduce(&state, AlbumTracklistAction.trackTapped(tracks[0], makeAlbum(id: 2)))
 
-        #expect(state.selectedAlbum == makeAlbum(id: 2))
+        #expect(state.queue == .album(makeAlbum(id: 2)))
         #expect(sideEffect != nil)
     }
 
@@ -123,7 +123,7 @@ struct TrackSelectorReducerTests {
     }
 
     private func makeSelectedState(track: Track) -> TrackSelectorState {
-        TrackSelectorState(selectedAlbum: makeAlbum(), selectedTrack: track)
+        TrackSelectorState(queue: .album(makeAlbum()), selectedTrack: track)
     }
 
     private func makeAlbum(id: Int = 1, tracks: [Track]? = nil) -> Album {
