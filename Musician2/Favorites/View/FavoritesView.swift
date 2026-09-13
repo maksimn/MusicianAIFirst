@@ -35,15 +35,16 @@ struct FavoritesView: View {
         }
     }
 
-    /// A swipe over a track is the only thing the list does here, and it means one thing only: the
-    /// track leaves the favorites. A tap does nothing — a track is played from the tracklist of its
-    /// album, which is the feature that owns the picking of a track to play.
+    /// A tap on a track plays it, and the playback goes on through the list from there, so the whole
+    /// list travels with the tapped track: the track selector takes the next track out of it. A swipe
+    /// over a track means one thing only here — the track leaves the favorites.
     private var tracklist: some View {
         TracklistView(
             tracks: store.state.tracks,
             currentTrack: store.state.currentTrack,
             textColor: .white
-        ) { _ in
+        ) { track in
+            store.dispatch(FavoritesAction.trackTapped(track, store.state.tracks))
         } onToggleIsFavorite: { track in
             store.dispatch(FavoritesAction.removeFromFavorites(track))
         }
