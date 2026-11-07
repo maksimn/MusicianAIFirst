@@ -10,14 +10,19 @@ import UDF
 
 struct AppView: View {
 
+    /// The index of the Books tab in the view pager: the audio player is hidden while it is
+    /// selected, since the books have nothing to play.
+    private static let booksTabIndex = 0
+
     @State var store: Store<AppState>
+
+    @State private var selectedTabIndex = 1
 
     var body: some View {
         VStack(spacing: 2) {
-            ViewPager(selectedIndex: 1) {
+            ViewPager(selectedIndex: 1, onPageSelected: { selectedTabIndex = $0 }) {
                 ViewPagerPage("КНИГИ") {
-                    // The books feature is not there yet: the tab only keeps the place it will take.
-                    Color(.systemBackground)
+                    BooksView()
                 }
 
                 ViewPagerPage("АЛЬБОМЫ") {
@@ -30,7 +35,16 @@ struct AppView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            AudioPlayerFeature(store: store.scope(\.audioPlayer))
+            if selectedTabIndex == Self.booksTabIndex {
+                // The player is hidden on the Books tab: the empty view keeps the if/else
+                // branches type-compatible and lets the player ease out instead of vanishing.
+                Color.clear
+                    .transition(.opacity.animation(.easeOut(duration: 0.25)))
+            } else {
+                AudioPlayerFeature(store: store.scope(\.audioPlayer))
+                    .transition(.opacity.animation(.easeIn(duration: 0.25)))
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: selectedTabIndex)
     }
 }

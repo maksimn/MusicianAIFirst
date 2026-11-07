@@ -47,12 +47,22 @@ struct ViewPager: View {
 
     @State private var selectedIndex = 0
 
+    /// The observer of the page selection: it is called with the index of the newly selected page
+    /// every time the user picks a tab, so that the view hosting the pager can react to the
+    /// selection — for example, show or hide the views pinned to the pages.
+    private let onPageSelected: ((Int) -> Void)?
+
     /// The namespace lets the selection indicator slide from tab to tab instead of
     /// disappearing under one title and reappearing under another.
     @Namespace private var indicatorNamespace
 
-    init(selectedIndex: Int = 0, @ViewPagerBuilder pages: () -> [ViewPagerPage]) {
+    init(
+        selectedIndex: Int = 0,
+        onPageSelected: ((Int) -> Void)? = nil,
+        @ViewPagerBuilder pages: () -> [ViewPagerPage]
+    ) {
         self.selectedIndex = selectedIndex
+        self.onPageSelected = onPageSelected
         self.pages = pages()
     }
 
@@ -96,6 +106,8 @@ struct ViewPager: View {
             withAnimation(.easeInOut(duration: 0.25)) {
                 selectedIndex = index
             }
+
+            onPageSelected?(index)
         } label: {
             Text(page.title)
                 .font(.system(size: 16, weight: .bold))
