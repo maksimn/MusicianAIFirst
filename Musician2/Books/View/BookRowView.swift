@@ -16,7 +16,7 @@ struct BookRowView: View {
     let book: Book
 
     /// The size of the cover image: the height of the image is the height of the whole item.
-    static let coverSize = CGSize(width: 96, height: 144)
+    static let coverSize = CGSize(width: 153.6, height: 230.4)
 
     var body: some View {
         let backgroundColor = Color(hex: book.medianColor) ?? .clear
@@ -40,23 +40,22 @@ struct BookRowView: View {
                     .padding(.top, 12)
                     .padding(.horizontal, 24)
 
-                Spacer()
-
                 Text("\(book.type), \(book.year)")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(textColor)
+                    .padding(.top, 8)
                     .padding(.horizontal, 24)
 
+                Spacer()
+
                 if let storeUrl = book.storeUrl {
-                    Link("В магазине", destination: storeUrl)
+                    Link("В магазин", destination: storeUrl)
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(textColor)
                         .underline()
-                        .padding(.top, 8)
+                        .padding(.bottom, 16)
                         .padding(.horizontal, 24)
                 }
-
-                Spacer(minLength: 12)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }

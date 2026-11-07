@@ -13,14 +13,7 @@ struct BooksView: View {
 
     @StateObject private var viewModel: BooksViewModel
 
-    init(viewModel: BooksViewModel = BooksViewModel(
-        loadBooksUseCase: LoadBooksUseCaseImpl(
-            repository: RemoteBooksRepository(
-                dataLoader: URLSessionNetworkDataLoader(),
-                fileCache: BooksFileCache()
-            )
-        )
-    )) {
+    init(viewModel: BooksViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
@@ -28,10 +21,10 @@ struct BooksView: View {
         Group {
             switch viewModel.state {
             case .loading:
-                ProgressView("Loading books…")
+                ProgressView("Загрузка списка книг...")
             case .failed(let error):
                 ContentUnavailableView(
-                    "Failed to load books",
+                    "Не удалось загрузить список книг.",
                     systemImage: "exclamationmark.triangle",
                     description: Text(error.localizedDescription)
                 )

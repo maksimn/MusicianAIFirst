@@ -5,6 +5,7 @@
 //  Created by Maksim Ivanov on 07.11.2026.
 //
 
+import Combine
 import Foundation
 
 /// The view model of the books list.
