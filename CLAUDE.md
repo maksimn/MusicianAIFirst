@@ -36,7 +36,15 @@ awaited deterministically instead of polled/slept.
 The app follows a Redux-like UDF architecture, using the `UDF` package (state container +
 reducer/side-effect plumbing: `Store`, `Action`, `SideEffectProtocol`, `ActionDispatcher`).
 This is a from-scratch rewrite of an earlier Clean-MVVM version of the same app — the UDF
-rewrite is the current architecture; don't reintroduce MVVM/ViewModel patterns.
+rewrite is the current architecture; don't reintroduce MVVM/ViewModel patterns in the existing
+features.
+
+**The one exception is the `Books` feature** (`Musician2/Books/`): it was added after the UDF
+refactoring in the Clean MVVM style — `BooksView` observes `BooksViewModel` (`ObservableObject`
+with a `@Published` state), which delegates to `LoadBooksUseCase`, which delegates to
+`BooksRepository` (`RemoteBooksRepository` fetches `http://maksimn.github.io/elizarov/books.json`
+and caches the downloaded JSON verbatim in `BooksFileCache`). It does not participate in the
+UDF store at all.
 
 **One `Store<AppState>`** is built once in `App/AppBuilder.swift` and lives for the app's
 lifetime (`Musician2App.swift`). `AppState` (`App/AppState.swift`) is a flat struct composing
@@ -102,6 +110,9 @@ must stay side-effect-free. Side effects report back only by dispatching further
 
 ### Feature responsibilities
 
+- **Books** — Clean MVVM (see the exception above); shows the books feed with covers, the
+  type/year description and an optional store link, coloring every row with the book's
+  `median_color`.
 - **AlbumList** — fetches albums with a `NetworkDataLoader` and keeps them in the
   `AlbumCacheService` SwiftData store (the fallback when the network fails; there is no
   repository layer — side effects use both directly), sorts them newest year first, shows
