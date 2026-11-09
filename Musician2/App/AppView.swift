@@ -16,8 +16,14 @@ struct AppView: View {
         VStack(spacing: 2) {
             ViewPager(selectedIndex: 1) {
                 ViewPagerPage("КНИГИ") {
-                    // The books feature is not there yet: the tab only keeps the place it will take.
-                    Color(.systemBackground)
+                    BooksView(viewModel: BooksViewModel(
+                        loadBooksUseCase: LoadBooksUseCaseImpl(
+                            repository: RemoteBooksRepository(
+                                dataLoader: URLSessionNetworkDataLoader(),
+                                fileCache: BooksFileCache()
+                            )
+                        )
+                    ))
                 }
 
                 ViewPagerPage("АЛЬБОМЫ") {
