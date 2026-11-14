@@ -14,10 +14,9 @@ struct AppView: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            ViewPager(selectedIndex: 1) {
+            ViewPager(selectedIndex: 0) {
                 ViewPagerPage("КНИГИ") {
-                    // The books feature is not there yet: the tab only keeps the place it will take.
-                    Color(.systemBackground)
+                    BooksListView()
                 }
 
                 ViewPagerPage("АЛЬБОМЫ") {
